@@ -388,3 +388,94 @@
 2026-01-28T15:48:06: 🚀 Serveur Granto démarré sur le port 3001
 2026-01-28T15:48:06: 📡 API accessible sur http://0.0.0.0:3001
 2026-01-28T15:48:06: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:03:08: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-28T16:03:08: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-28T16:03:08: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:15:19: 2026-01-28T15:15:19.680Z - GET /
+2026-01-28T16:17:10: 2026-01-28T15:17:10.751Z - GET /favicon.ico
+2026-01-28T16:28:03: 2026-01-28T15:28:03.132Z - GET /api/projets
+2026-01-28T16:28:03: 2026-01-28T15:28:03.166Z - GET /api/dossiers
+2026-01-28T16:29:16: 2026-01-28T15:29:16.097Z - GET /health
+2026-01-28T16:29:16: 2026-01-28T15:29:16.142Z - GET /api/aides-territoires/search
+2026-01-28T16:29:16: 2026-01-28T15:29:16.146Z - GET /api/aides-territoires/search
+2026-01-28T16:29:16: Paramètres reçus: { text: 'test' }
+2026-01-28T16:29:16: Paramètres envoyés à l API: { text: 'test' }
+2026-01-28T16:29:16: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-28T16:29:16: ❌ Erreur recherche: Request failed with status code 401
+2026-01-28T16:32:03: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-28T16:32:03: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-28T16:32:03: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:33:16: 2026-01-28T15:33:16.964Z - GET /api/aides-territoires/search
+2026-01-28T16:33:16: 2026-01-28T15:33:16.971Z - GET /api/aides-territoires/search
+2026-01-28T16:33:16: Paramètres reçus: { text: 'panneaux solaires' }
+2026-01-28T16:33:16: Paramètres envoyés à l API: { text: 'panneaux solaires' }
+2026-01-28T16:33:17: ❌ Erreur authentification: 401 Request failed with status code 401
+2026-01-28T16:33:17: ❌ Erreur recherche aides: 401 Request failed with status code 401
+2026-01-28T16:33:17: ❌ Erreur recherche: Request failed with status code 401
+2026-01-28T16:33:37: 2026-01-28T15:33:37.617Z - GET /api/aides-territoires/search
+2026-01-28T16:33:37: 2026-01-28T15:33:37.621Z - GET /api/aides-territoires/search
+2026-01-28T16:33:37: Paramètres reçus: { text: 'panneaux solaires' }
+2026-01-28T16:33:37: Paramètres envoyés à l API: { text: 'panneaux solaires' }
+2026-01-28T16:33:37: ❌ Erreur authentification: 401 Request failed with status code 401
+2026-01-28T16:33:37: ❌ Erreur recherche aides: 401 Request failed with status code 401
+2026-01-28T16:33:37: ❌ Erreur recherche: Request failed with status code 401
+2026-01-28T16:37:59: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-28T16:37:59: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-28T16:37:59: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:38:15: 2026-01-28T15:38:15.152Z - GET /api/aides-territoires/test
+2026-01-28T16:38:15: 🔐 Connexion à l'API Aides-Territoires...
+2026-01-28T16:38:15: ✅ Authentification réussie, Bearer token obtenu
+2026-01-28T16:38:24: 2026-01-28T15:38:24.267Z - GET /api/aides-territoires/search
+2026-01-28T16:38:24: 2026-01-28T15:38:24.273Z - GET /api/aides-territoires/search
+2026-01-28T16:38:24: Paramètres reçus: { text: 'panneaux solaires' }
+2026-01-28T16:38:24: Paramètres envoyés à l API: { text: 'panneaux solaires' }
+2026-01-28T16:38:24: 🔍 Recherche avec Bearer token
+2026-01-28T16:38:25: ✅ 119 résultats bruts de l API
+2026-01-28T16:39:41: 2026-01-28T15:39:41.742Z - GET /api/dossiers
+2026-01-28T16:39:41: 2026-01-28T15:39:41.790Z - GET /api/projets
+2026-01-28T16:43:13: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-28T16:43:13: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-28T16:43:13: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:45:29: 2026-01-28T15:45:29.992Z - GET /api/projets
+2026-01-28T16:45:30: 2026-01-28T15:45:30.027Z - GET /api/dossiers
+2026-01-28T16:49:21: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-28T16:49:21: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-28T16:49:21: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-28T16:51:13: 2026-01-28T15:51:13.557Z - GET /api/aides-territoires/search
+2026-01-28T16:51:13: 2026-01-28T15:51:13.562Z - GET /api/aides-territoires/search
+2026-01-28T16:51:13: Paramètres reçus: { text: 'test' }
+2026-01-28T16:51:13: Paramètres envoyés à l API: { text: 'test' }
+2026-01-28T16:51:13: 🔐 Connexion à l'API Aides-Territoires...
+2026-01-28T16:51:13: ✅ Authentification réussie, Bearer token obtenu
+2026-01-28T16:51:13: 🔍 Recherche avec Bearer token
+2026-01-28T16:51:14: ✅ 8 résultats bruts de l API
+2026-01-28T16:52:28: 2026-01-28T15:52:28.521Z - GET /api/aides-territoires/search
+2026-01-28T16:52:28: 2026-01-28T15:52:28.524Z - GET /api/aides-territoires/search
+2026-01-28T16:52:28: Paramètres reçus: { targeted_audiences: 'Saint Mars la Brière', text: 'Voirie' }
+2026-01-28T16:52:28: Paramètres envoyés à l API: { text: 'Voirie' }
+2026-01-28T16:52:28: 🔍 Recherche avec Bearer token
+2026-01-28T16:52:29: ✅ 189 résultats bruts de l API
+2026-01-28T16:52:41: 2026-01-28T15:52:41.125Z - GET /api/dispositifs/44620
+2026-01-28T16:52:41: 2026-01-28T15:52:41.152Z - GET /api/projets
+2026-01-28T16:52:44: 2026-01-28T15:52:44.044Z - GET /api/projets
+2026-01-28T16:52:44: 2026-01-28T15:52:44.053Z - GET /api/dossiers
+2026-01-28T16:52:57: 2026-01-28T15:52:57.918Z - GET /api/aides-territoires/search
+2026-01-28T16:52:57: 2026-01-28T15:52:57.919Z - GET /api/aides-territoires/search
+2026-01-28T16:52:57: Paramètres reçus: { targeted_audiences: 'Saint Mars la brière', text: 'voirie' }
+2026-01-28T16:52:57: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-28T16:52:57: 🔍 Recherche avec Bearer token
+2026-01-28T16:52:58: ✅ 189 résultats bruts de l API
+2026-01-28T16:53:29: 2026-01-28T15:53:29.086Z - GET /api/projets
+2026-01-28T16:53:43: 2026-01-28T15:53:43.195Z - GET /api/dispositifs/152468
+2026-01-28T16:53:43: 2026-01-28T15:53:43.200Z - GET /api/projets
+2026-01-28T16:53:45: 2026-01-28T15:53:45.159Z - GET /api/projets
+2026-01-28T16:53:45: 2026-01-28T15:53:45.193Z - GET /api/dossiers
+2026-01-28T16:53:59: 2026-01-28T15:53:59.413Z - GET /api/aides-territoires/search
+2026-01-28T16:53:59: 2026-01-28T15:53:59.414Z - GET /api/aides-territoires/search
+2026-01-28T16:53:59: Paramètres reçus: {
+  targeted_audiences: 'Saint mars la Brière',
+  text: 'Panneaux solaires'
+}
+2026-01-28T16:53:59: Paramètres envoyés à l API: { text: 'Panneaux solaires' }
+2026-01-28T16:53:59: 🔍 Recherche avec Bearer token
+2026-01-28T16:54:01: ✅ 119 résultats bruts de l API

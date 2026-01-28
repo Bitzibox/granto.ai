@@ -1,0 +1,85 @@
+const axios = require('axios');
+
+const API_BASE_URL = 'https://aides-territoires.beta.gouv.fr/api';
+const API_KEY = process.env.AIDES_TERRITOIRES_API_KEY;
+
+let authToken = null;
+let isAuthenticated = false;
+
+const authenticate = async () => {
+  if (!API_KEY) {
+    console.log('⚠️ Pas de clé API configurée');
+    return null;
+  }
+
+  if (isAuthenticated && authToken) {
+    return authToken;
+  }
+
+  try {
+    // Test simple avec la clé API
+    const response = await axios.get(`${API_BASE_URL}/aids/`, {
+      params: { page_size: 1 },
+      headers: { 'Authorization': `Token ${API_KEY}` }
+    });
+    
+    authToken = API_KEY;
+    isAuthenticated = true;
+    console.log('✅ Authentification Aides-Territoires réussie');
+    return authToken;
+  } catch (error) {
+    console.error('❌ Erreur authentification:', error.response?.status, error.message);
+    throw error;
+  }
+};
+
+const searchAids = async (params = {}) => {
+  try {
+    // S'assurer qu'on est authentifié
+    if (!authToken || !isAuthenticated) {
+      await authenticate();
+    }
+
+    const apiParams = {
+      text: params.text || '',
+      page: params.page || 1,
+      page_size: params.pageSize || 50
+    };
+
+    const headers = authToken ? { 'Authorization': `Token ${authToken}` } : {};
+
+    console.log('🔑 Utilisation du token:', authToken ? 'OUI' : 'NON');
+
+    const response = await axios.get(`${API_BASE_URL}/aids/`, {
+      params: apiParams,
+      headers
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('❌ Erreur recherche aides:', error.response?.status, error.message);
+    throw error;
+  }
+};
+
+const getAidDetails = async (slug) => {
+  try {
+    // S'assurer qu'on est authentifié
+    if (!authToken || !isAuthenticated) {
+      await authenticate();
+    }
+
+    const headers = authToken ? { 'Authorization': `Token ${authToken}` } : {};
+    const response = await axios.get(`${API_BASE_URL}/aids/${slug}/`, { headers });
+    return response.data;
+  } catch (error) {
+    console.error('❌ Erreur détails aide:', error.response?.status, error.message);
+    throw error;
+  }
+};
+
+module.exports = {
+  authenticate,
+  searchAids,
+  getAidDetails
+};

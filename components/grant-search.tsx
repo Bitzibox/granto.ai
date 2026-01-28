@@ -46,7 +46,7 @@ export function GrantSearch() {
   const loadProjects = async () => {
     setLoadingProjects(true)
     try {
-      const response = await fetch('http://localhost:3001/api/projets')
+      const response = await fetch('/api/projets')
       if (response.ok) {
         const data = await response.json()
         setProjects(data)
@@ -70,7 +70,7 @@ export function GrantSearch() {
       if (typeAide) params.append('aid_types', typeAide)
 
       const response = await fetch(
-        `http://localhost:3001/api/aides-territoires/search?${params.toString()}`
+        `/api/aides-territoires/search?${params.toString()}`
       )
 
       if (!response.ok) {
@@ -90,7 +90,7 @@ export function GrantSearch() {
   const handleAddToProject = async (projectId: string) => {
   if (!selectedDispositif) return;
     try {
-      const response = await fetch('http://localhost:3001/api/dossiers', {
+      const response = await fetch('/api/dossiers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
