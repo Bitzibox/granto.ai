@@ -1,0 +1,506 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  X,
+  BookmarkPlus,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
+import { cn } from '@/lib/utils'
+import { dispositifsAPI, projetsAPI, dossiersAPI } from '@/lib/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+
+const projectTypes = [
+  'Équipement public',
+  'Voirie/Mobilité',
+  'Énergie/Climat',
+  'Patrimoine',
+  'Numérique',
+  'Social/Éducation',
+  'Culture/Sport',
+  'Environnement',
+]
+
+export function GrantSearch() {
+  const router = useRouter()
+  const [showFilters, setShowFilters] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [subsidyRate, setSubsidyRate] = useState([30])
+  const [sortBy, setSortBy] = useState('pertinence')
+  const [dispositifs, setDispositifs] = useState<any[]>([])
+  const [filteredDispositifs, setFilteredDispositifs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showSelectDialog, setShowSelectDialog] = useState(false)
+  const [selectedDispositif, setSelectedDispositif] = useState<any>(null)
+  const [projets, setProjets] = useState<any[]>([])
+  const [montantMin, setMontantMin] = useState('')
+  const [montantMax, setMontantMax] = useState('')
+
+  useEffect(() => {
+    loadDispositifs()
+    loadProjets()
+  }, [])
+
+  useEffect(() => {
+    applyFilters()
+  }, [searchQuery, selectedTypes, subsidyRate, montantMin, montantMax, dispositifs, sortBy])
+
+  const loadDispositifs = async () => {
+    try {
+      const data = await dispositifsAPI.getAll()
+      setDispositifs(data)
+    } catch (error) {
+      console.error('Erreur chargement dispositifs:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadProjets = async () => {
+    try {
+      const data = await projetsAPI.getAll()
+      setProjets(data)
+    } catch (error) {
+      console.error('Erreur chargement projets:', error)
+    }
+  }
+
+  const applyFilters = () => {
+    let filtered = [...dispositifs]
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(d => 
+        d.nom?.toLowerCase().includes(query) ||
+        d.description?.toLowerCase().includes(query) ||
+        d.organisme?.toLowerCase().includes(query)
+      )
+    }
+
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter(d => {
+        if (!d.typesProjets || d.typesProjets.length === 0) return false
+        return selectedTypes.some(type => d.typesProjets.includes(type))
+      })
+    }
+
+    filtered = filtered.filter(d => {
+      if (!d.tauxMax) return true
+      return parseFloat(d.tauxMax) >= subsidyRate[0]
+    })
+
+    if (montantMin) {
+      filtered = filtered.filter(d => {
+        if (!d.montantMax) return true
+        return d.montantMax >= parseFloat(montantMin)
+      })
+    }
+    if (montantMax) {
+      filtered = filtered.filter(d => {
+        if (!d.montantMin) return true
+        return d.montantMin <= parseFloat(montantMax)
+      })
+    }
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'montant':
+          return (b.montantMax || 0) - (a.montantMax || 0)
+        case 'deadline':
+          if (!a.dateCloture) return 1
+          if (!b.dateCloture) return -1
+          return new Date(a.dateCloture).getTime() - new Date(b.dateCloture).getTime()
+        case 'score':
+          return calculateScore(b) - calculateScore(a)
+        default:
+          return 0
+      }
+    })
+
+    setFilteredDispositifs(filtered)
+  }
+
+  const toggleProjectType = (type: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    )
+  }
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedTypes([])
+    setSubsidyRate([30])
+    setMontantMin('')
+    setMontantMax('')
+  }
+
+  const getScoreColor = (score: number) => {
+    if (score > 70) return 'from-green-500 to-green-600'
+    if (score >= 40) return 'from-orange-500 to-orange-600'
+    return 'from-red-500 to-red-600'
+  }
+
+  const calculateScore = (dispositif: any) => {
+    let score = 50
+    if (dispositif.tauxMax) score += Math.min(parseFloat(dispositif.tauxMax), 30)
+    if (dispositif.typesProjets && dispositif.typesProjets.length > 0) score += 10
+    if (dispositif.dateOuverture && new Date(dispositif.dateOuverture) <= new Date()) score += 10
+    return Math.min(score, 100)
+  }
+
+  const handleSelectDispositif = (dispositif: any) => {
+    setSelectedDispositif(dispositif)
+    setShowSelectDialog(true)
+  }
+
+  const handleAssociateToProject = async (projetId: string) => {
+    try {
+      const dossier = await dossiersAPI.create({
+        projetId: projetId,
+        dispositifId: selectedDispositif.id,
+        notes: `Dossier créé automatiquement depuis la recherche de subventions`
+      })
+      
+      console.log('✅ Dossier créé:', dossier)
+      setShowSelectDialog(false)
+      router.push(`/dossier/${dossier.id}`)
+    } catch (error: any) {
+      console.error('❌ Erreur création dossier:', error)
+      alert(`Erreur lors de la création du dossier: ${error.message}`)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          Rechercher des subventions
+        </h1>
+        <p className="text-slate-600">
+          Trouvez les financements adaptés à vos projets
+        </p>
+      </div>
+
+      <Card className="border border-slate-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Recherchez par mots-clés (ex: gymnase, énergie, voirie...)"
+                className="pl-10 text-lg h-12"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-6 gap-2"
+              onClick={applyFilters}
+            >
+              <Search className="h-5 w-5" />
+              Rechercher
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            >
+              Filtres avancés
+              {showFilters ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {showFilters && (
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Type de projet
+                  </label>
+                  <div className="border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                    {projectTypes.map((type) => (
+                      <div
+                        key={type}
+                        className="flex items-center space-x-2 py-1.5"
+                      >
+                        <Checkbox
+                          id={type}
+                          checked={selectedTypes.includes(type)}
+                          onCheckedChange={() => toggleProjectType(type)}
+                        />
+                        <label
+                          htmlFor={type}
+                          className="text-sm text-slate-700 cursor-pointer flex-1"
+                        >
+                          {type}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedTypes.length > 0 && (
+                    <p className="text-xs text-slate-600">
+                      {selectedTypes.length} sélectionné
+                      {selectedTypes.length > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Montant du projet (€)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="number" 
+                      placeholder="Min en €"
+                      value={montantMin}
+                      onChange={(e) => setMontantMin(e.target.value)}
+                    />
+                    <Input 
+                      type="number" 
+                      placeholder="Max en €"
+                      value={montantMax}
+                      onChange={(e) => setMontantMax(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Taux minimum de subvention
+                  </label>
+                  <div className="pt-2">
+                    <Slider
+                      value={subsidyRate}
+                      onValueChange={setSubsidyRate}
+                      max={80}
+                      step={5}
+                      className="mb-2"
+                    />
+                    <p className="text-sm text-slate-600">{subsidyRate[0]}%</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                >
+                  <X className="h-4 w-4" />
+                  Effacer les filtres
+                </button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-slate-700">
+                <span className="font-semibold">{filteredDispositifs.length}</span> dispositif{filteredDispositifs.length > 1 ? 's' : ''} trouvé{filteredDispositifs.length > 1 ? 's' : ''}
+                {filteredDispositifs.length !== dispositifs.length && (
+                  <span className="text-slate-500"> sur {dispositifs.length}</span>
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">Trier par</span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pertinence">Pertinence</SelectItem>
+                    <SelectItem value="montant">Montant</SelectItem>
+                    <SelectItem value="deadline">Date limite</SelectItem>
+                    <SelectItem value="score">Score</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {filteredDispositifs.length === 0 ? (
+              <Card className="border border-slate-200">
+                <CardContent className="p-12 text-center text-slate-500">
+                  <p className="mb-4">Aucun dispositif trouvé avec ces critères.</p>
+                  <Button variant="outline" onClick={clearFilters}>
+                    Réinitialiser les filtres
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {filteredDispositifs.map((dispositif) => {
+                  const score = calculateScore(dispositif)
+                  return (
+                    <Card
+                      key={dispositif.id}
+                      className="border border-slate-200 hover:shadow-lg transition-shadow relative"
+                    >
+                      <CardContent className="p-6">
+                        <div className="absolute top-4 right-4">
+                          <div
+                            className={cn(
+                              'bg-gradient-to-br text-white font-bold text-lg px-3 py-1.5 rounded-lg shadow-md',
+                              getScoreColor(score)
+                            )}
+                          >
+                            {score}/100
+                          </div>
+                        </div>
+
+                        <div className="pr-20 mb-3">
+                          <h3 className="text-xl font-semibold text-slate-900 mb-1">
+                            {dispositif.nom}
+                          </h3>
+                          <p className="text-sm text-slate-600">{dispositif.organisme || 'Non spécifié'}</p>
+                        </div>
+
+                        <p className="text-slate-700 text-sm mb-4 line-clamp-2">
+                          {dispositif.description || 'Aucune description disponible'}
+                        </p>
+
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {dispositif.tauxMax && (
+                            <Badge variant="secondary" className="text-xs">
+                              💰 {dispositif.tauxMax}% max
+                            </Badge>
+                          )}
+                          {dispositif.dateCloture && (
+                            <Badge variant="secondary" className="text-xs">
+                              📅 {new Date(dispositif.dateCloture).toLocaleDateString('fr-FR')}
+                            </Badge>
+                          )}
+                          {dispositif.zonesEligibles && dispositif.zonesEligibles.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              🎯 {dispositif.zonesEligibles[0]}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-5">
+                          {dispositif.typesProjets && dispositif.typesProjets.length > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-green-200 bg-green-50 text-green-700"
+                            >
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {dispositif.typesProjets.length} type{dispositif.typesProjets.length > 1 ? 's' : ''} éligible{dispositif.typesProjets.length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {dispositif.montantMin && dispositif.montantMax && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-blue-200 bg-blue-50 text-blue-700"
+                            >
+                              💶 {dispositif.montantMin?.toLocaleString()}€ - {dispositif.montantMax?.toLocaleString()}€
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1 bg-transparent"
+                            onClick={() => router.push(`/dispositif/${dispositif.id}`)}
+                          >
+                            Voir les détails
+                          </Button>
+                          <Button 
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => handleSelectDispositif(dispositif)}
+                          >
+                            Sélectionner
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <Dialog open={showSelectDialog} onOpenChange={setShowSelectDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Associer à un projet</DialogTitle>
+            <DialogDescription>
+              Sélectionnez le projet pour lequel vous souhaitez créer un dossier de subvention
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-3 max-h-96 overflow-y-auto">
+            {projets.length === 0 ? (
+              <p className="text-center text-slate-500 py-8">
+                Aucun projet disponible. Créez d'abord un projet.
+              </p>
+            ) : (
+              projets.map((projet) => (
+                <Card
+                  key={projet.id}
+                  className="cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => handleAssociateToProject(projet.id)}
+                >
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-slate-900">{projet.titre}</h4>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {projet.collectivite?.nom}
+                    </p>
+                    {projet.montantTtc && (
+                      <p className="text-sm text-slate-500 mt-1">
+                        Budget: {parseFloat(projet.montantTtc).toLocaleString()}€
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

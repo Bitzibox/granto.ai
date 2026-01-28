@@ -1,0 +1,449 @@
+'use client'
+
+import { useState } from 'react'
+import { 
+  Search, 
+  Plus, 
+  Grid3x3, 
+  List, 
+  Building2,
+  Calendar,
+  FileText,
+  ChevronRight,
+  MoreVertical,
+  FolderOpen,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { NewProjectDialog } from '@/components/new-project-dialog'
+
+type ViewMode = 'grid' | 'table'
+type StatusType = 'brouillon' | 'en-cours' | 'pret' | 'depose'
+type SortType = 'recent' | 'ancien' | 'montant-asc' | 'montant-desc' | 'nom'
+
+interface Project {
+  id: string
+  title: string
+  collectivite: string
+  type: string
+  montant: number
+  status: StatusType
+  completion: number
+  subventions: number
+  startDate: string
+}
+
+const projects: Project[] = [
+  {
+    id: '1',
+    title: 'Rénovation du gymnase',
+    collectivite: 'Commune de Saint Mars la Brière',
+    type: 'Équipement public',
+    montant: 100000,
+    status: 'pret',
+    completion: 75,
+    subventions: 3,
+    startDate: 'Avril 2026',
+  },
+  {
+    id: '2',
+    title: 'Aménagement piste cyclable',
+    collectivite: 'CC des Vallées du Mont-Blanc',
+    type: 'Voirie/Mobilité',
+    montant: 850000,
+    status: 'brouillon',
+    completion: 30,
+    subventions: 1,
+    startDate: 'Juin 2026',
+  },
+  {
+    id: '3',
+    title: 'Rénovation énergétique mairie',
+    collectivite: 'Commune de Saint-Martin',
+    type: 'Énergie/Climat',
+    montant: 180000,
+    status: 'en-cours',
+    completion: 60,
+    subventions: 2,
+    startDate: 'Mars 2026',
+  },
+  {
+    id: '4',
+    title: 'Construction centre médical',
+    collectivite: 'Commune de Beauvais',
+    type: 'Santé/Social',
+    montant: 500000,
+    status: 'brouillon',
+    completion: 15,
+    subventions: 0,
+    startDate: 'Septembre 2026',
+  },
+  {
+    id: '5',
+    title: 'Éclairage public LED',
+    collectivite: 'Commune de Versailles',
+    type: 'Énergie/Climat',
+    montant: 75000,
+    status: 'pret',
+    completion: 90,
+    subventions: 2,
+    startDate: 'Mai 2026',
+  },
+  {
+    id: '6',
+    title: 'Création aire de jeux',
+    collectivite: 'Commune de Lyon 3e',
+    type: 'Équipement public',
+    montant: 45000,
+    status: 'en-cours',
+    completion: 50,
+    subventions: 1,
+    startDate: 'Juillet 2026',
+  },
+]
+
+const statusConfig = {
+  brouillon: { label: 'Brouillon', className: 'bg-slate-100 text-slate-800 hover:bg-slate-100' },
+  'en-cours': { label: 'En cours', className: 'bg-blue-100 text-blue-800 hover:bg-blue-100' },
+  pret: { label: 'Prêt à déposer', className: 'bg-amber-100 text-amber-800 hover:bg-amber-100' },
+  depose: { label: 'Déposé', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
+}
+
+export function ProjectsList() {
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('tous')
+  const [typeFilter, setTypeFilter] = useState('tous')
+  const [sortBy, setSortBy] = useState<SortType>('recent')
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([])
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProjects(projects.map(p => p.id))
+    } else {
+      setSelectedProjects([])
+    }
+  }
+
+  const handleSelectProject = (projectId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProjects([...selectedProjects, projectId])
+    } else {
+      setSelectedProjects(selectedProjects.filter(id => id !== projectId))
+    }
+  }
+
+  return (
+    <div>
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">Mes projets</h1>
+        <NewProjectDialog />
+      </div>
+
+      {/* Filters Bar */}
+      <Card className="mb-6 border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            {/* Search Input */}
+            <div className="relative flex-1 lg:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Rechercher un projet..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 flex-1">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous</SelectItem>
+                  <SelectItem value="brouillon">Brouillon</SelectItem>
+                  <SelectItem value="en-cours">En cours</SelectItem>
+                  <SelectItem value="pret">Prêt à déposer</SelectItem>
+                  <SelectItem value="depose">Déposé</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous types</SelectItem>
+                  <SelectItem value="equipement">Équipement public</SelectItem>
+                  <SelectItem value="voirie">Voirie/Mobilité</SelectItem>
+                  <SelectItem value="energie">Énergie/Climat</SelectItem>
+                  <SelectItem value="sante">Santé/Social</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortType)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Plus récents</SelectItem>
+                  <SelectItem value="ancien">Plus anciens</SelectItem>
+                  <SelectItem value="montant-asc">Montant croissant</SelectItem>
+                  <SelectItem value="montant-desc">Montant décroissant</SelectItem>
+                  <SelectItem value="nom">Nom A-Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={viewMode === 'grid' ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white' : 'hover:bg-slate-200'}
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={viewMode === 'table' ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white' : 'hover:bg-slate-200'}
+                onClick={() => setViewMode('table')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selected Projects Bar */}
+      {selectedProjects.length > 0 && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+          <span className="text-sm text-blue-900 font-medium">
+            {selectedProjects.length} sélectionné{selectedProjects.length > 1 ? 's' : ''}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedProjects([])}>
+            Désélectionner
+          </Button>
+        </div>
+      )}
+
+      {/* Grid View */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project) => (
+            <Card 
+              key={project.id} 
+              className="border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer group"
+            >
+              <CardContent className="p-6">
+                {/* Status Badge & Menu */}
+                <div className="flex items-start justify-between mb-4">
+                  <Badge className={`${statusConfig[project.status].className} rounded-full text-xs font-medium`}>
+                    {statusConfig[project.status].label}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Modifier</DropdownMenuItem>
+                      <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600">Supprimer</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Title & Collectivité */}
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">{project.title}</h3>
+                <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+                  <Building2 className="h-4 w-4" />
+                  <span>{project.collectivite}</span>
+                </div>
+
+                {/* Type Badge & Amount */}
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="secondary" className="text-xs">
+                    {project.type}
+                  </Badge>
+                  <span className="text-lg font-semibold text-slate-900">{formatAmount(project.montant)}</span>
+                </div>
+
+                {/* Calendar Info */}
+                <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+                  <Calendar className="h-4 w-4" />
+                  <span>Début: {project.startDate}</span>
+                </div>
+
+                {/* Progress */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Complétion: {project.completion}%</span>
+                  </div>
+                  <Progress value={project.completion} className="h-2" />
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary" className="gap-1">
+                    <FileText className="h-3 w-3" />
+                    {project.subventions} subvention{project.subventions > 1 ? 's' : ''}
+                  </Badge>
+                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <div className="border border-slate-200 rounded-lg bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={selectedProjects.length === projects.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="cursor-pointer">
+                  <div className="flex items-center gap-1">
+                    Titre
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  </div>
+                </TableHead>
+                <TableHead>Collectivité</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right cursor-pointer">
+                  <div className="flex items-center justify-end gap-1">
+                    Montant
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </div>
+                </TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-center">Subventions</TableHead>
+                <TableHead>Complétion</TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {projects.map((project) => (
+                <TableRow 
+                  key={project.id} 
+                  className="cursor-pointer hover:bg-slate-50"
+                >
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedProjects.includes(project.id)}
+                      onCheckedChange={(checked) => handleSelectProject(project.id, checked as boolean)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{project.title}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{project.collectivite}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">
+                      {project.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">{formatAmount(project.montant)}</TableCell>
+                  <TableCell>
+                    <Badge className={`${statusConfig[project.status].className} rounded-full text-xs font-medium`}>
+                      {statusConfig[project.status].label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary" className="gap-1">
+                      <FileText className="h-3 w-3" />
+                      {project.subventions}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={project.completion} className="h-2 w-20" />
+                      <span className="text-xs text-slate-600 min-w-[3ch]">{project.completion}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Modifier</DropdownMenuItem>
+                        <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">Supprimer</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-6">
+        <p className="text-sm text-slate-600">1-6 sur 6 projets</p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" disabled>
+            Précédent
+          </Button>
+          <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700 hover:text-white">
+            1
+          </Button>
+          <Button variant="outline" size="sm" disabled>
+            Suivant
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

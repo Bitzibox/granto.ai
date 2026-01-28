@@ -1,0 +1,46 @@
+
+> granto@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.10
+   - Environments: .env
+
+   Creating an optimized production build ...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+ ✓ Compiled successfully in 74s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/10) ...
+   Generating static pages (2/10) 
+   Generating static pages (4/10) 
+   Generating static pages (7/10) 
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    4.99 kB         114 kB
+├ ○ /_not-found                            994 B         103 kB
+├ ○ /calendrier                          3.78 kB         113 kB
+├ ○ /collectivites                       5.73 kB         148 kB
+├ ƒ /dispositif/[id]                     4.58 kB         128 kB
+├ ○ /dossiers                            4.69 kB         114 kB
+├ ƒ /projet/[id]                         5.16 kB         115 kB
+├ ƒ /projet/[id]/edit                    4.59 kB         142 kB
+├ ○ /projets                             4.52 kB         114 kB
+└ ○ /recherche-subventions               4.79 kB         128 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-2fe823c2b1ce4f82.js         46 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.93 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

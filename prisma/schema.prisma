@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Collectivite {
+  id        String   @id @default(uuid())
+  nom       String
+  type      String
+  siret     String?
+  adresse   String?
+  codePostal String?
+  ville     String?
+  email     String?
+  telephone String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projets   Projet[]
+  users     User[]
+}
+
+model Projet {
+  id              String    @id @default(uuid())
+  titre           String
+  description     String?
+  typeProjet      String?
+  montantHt       String?
+  montantTtc      String?
+  dateDebut       DateTime?
+  dateFin         DateTime?
+  statut          String    @default("brouillon")
+  collectiviteId  String
+  collectivite    Collectivite @relation(fields: [collectiviteId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  dossiers        DossierSubvention[]
+}
+
+model Dispositif {
+  id                    String    @id @default(uuid())
+  nom                   String
+  description           String?
+  organisme             String?
+  typesProjets          String[]
+  tauxMin               String?
+  tauxMax               String?
+  montantMin            Int?
+  montantMax            Int?
+  zonesEligibles        String[]
+  dateOuverture         DateTime?
+  dateCloture           DateTime?
+  url                   String?
+  criteresEligibilite   String?
+  documentsRequis       String[]
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  dossiers              DossierSubvention[]
+}
+
+model DossierSubvention {
+  id                String    @id @default(uuid())
+  projetId          String
+  dispositifId      String
+  projet            Projet    @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  dispositif        Dispositif @relation(fields: [dispositifId], references: [id], onDelete: Cascade)
+  
+  statut            String    @default("brouillon")
+  // Statuts possibles: brouillon, en_cours, depose, accepte, refuse, abandonne
+  
+  montantDemande    Float?
+  montantAccorde    Float?
+  tauxRetenu        Float?
+  
+  dateCreation      DateTime  @default(now())
+  dateDepot         DateTime?
+  dateDecision      DateTime?
+  echeanceDepot     DateTime?
+  
+  notes             String?
+  documentsJoints   String[]  // URLs des documents
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@unique([projetId, dispositifId])
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  nom             String
+  prenom          String
+  role            String    @default("user")
+  // Rôles possibles: admin, manager, user
+  
+  collectiviteId  String?
+  collectivite    Collectivite? @relation(fields: [collectiviteId], references: [id], onDelete: SetNull)
+  
+  lastLogin       DateTime?
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

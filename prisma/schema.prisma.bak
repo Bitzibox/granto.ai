@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Collectivite {
+  id          String   @id @default(uuid())
+  nom         String
+  type        String
+  population  Int?
+  zone        String?
+  departement String?
+  region      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  projets     Projet[]
+  
+  @@map("collectivites")
+}
+
+model Projet {
+  id               String    @id @default(uuid())
+  collectiviteId   String
+  titre            String
+  description      String?
+  typeProjet       String?
+  montantHt        Decimal?  @db.Decimal(12, 2)
+  montantTtc       Decimal?  @db.Decimal(12, 2)
+  maturite         String?
+  calendrierDebut  DateTime?
+  calendrierFin    DateTime?
+  objectifs        String?
+  statut           String    @default("brouillon")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  collectivite     Collectivite @relation(fields: [collectiviteId], references: [id], onDelete: Cascade)
+  dossiers         Dossier[]
+  
+  @@map("projets")
+}
+
+model Dispositif {
+  id              String    @id @default(uuid())
+  nom             String
+  organisme       String?
+  typeFinanceur   String?
+  description     String?
+  montantMin      Decimal?  @db.Decimal(12, 2)
+  montantMax      Decimal?  @db.Decimal(12, 2)
+  tauxMax         Decimal?  @db.Decimal(5, 2)
+  dateOuverture   DateTime?
+  dateCloture     DateTime?
+  typesProjets    String[]
+  zonesEligibles  String[]
+  urlOfficiel     String?
+  createdAt       DateTime  @default(now())
+  
+  dossiers        Dossier[]
+  
+  @@map("dispositifs")
+}
+
+model Dossier {
+  id                String    @id @default(uuid())
+  projetId          String
+  dispositifId      String
+  statut            String    @default("a_preparer")
+  scoreEligibilite  Int?
+  montantDemande    Decimal?  @db.Decimal(12, 2)
+  createdAt         DateTime  @default(now())
+  
+  projet            Projet      @relation(fields: [projetId], references: [id], onDelete: Cascade)
+  dispositif        Dispositif  @relation(fields: [dispositifId], references: [id], onDelete: Cascade)
+  
+  @@map("dossiers")
+}
