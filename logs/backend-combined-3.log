@@ -1,0 +1,367 @@
+2026-01-27T16:12:05: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T16:12:05: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T16:12:05: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T16:12:05: 2026-01-27T15:12:05.420Z - GET /api/aides-territoires/search
+2026-01-27T16:12:05: ✅ Authentification Aides-Territoires réussie
+2026-01-27T16:20:56: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T16:20:56: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T16:20:56: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T16:20:57: 2026-01-27T15:20:57.024Z - GET /api/aides-territoires/search
+2026-01-27T16:20:57: 2026-01-27T15:20:57.029Z - GET /api/aides-territoires/search
+2026-01-27T16:20:57: Paramètres reçus: { text: 'sport', perimeter: 'sarthe' }
+2026-01-27T16:20:57: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T16:20:57: ✅ Authentification Aides-Territoires réussie
+2026-01-27T16:20:58: ✅ 87 résultats bruts de l API
+2026-01-27T16:20:58: 🔍 Filtrage côté serveur pour: "sarthe"
+2026-01-27T16:20:58: ✅ 1 résultats après filtrage pour "sarthe"
+2026-01-27T16:21:56: 2026-01-27T15:21:56.629Z - GET /api/aides-territoires/search
+2026-01-27T16:21:56: 2026-01-27T15:21:56.635Z - GET /api/aides-territoires/search
+2026-01-27T16:21:56: Paramètres reçus: { text: 'panneaux solaires', perimeter: '72' }
+2026-01-27T16:21:56: Paramètres envoyés à l API: { text: 'panneaux solaires' }
+2026-01-27T16:21:57: ✅ 120 résultats bruts de l API
+2026-01-27T16:21:57: 🔍 Filtrage côté serveur pour: "72"
+2026-01-27T16:21:57: ✅ 8 résultats après filtrage pour "72"
+2026-01-27T16:21:57: 2026-01-27T15:21:57.371Z - GET /api/aides-territoires/search
+2026-01-27T16:21:57: 2026-01-27T15:21:57.379Z - GET /api/aides-territoires/search
+2026-01-27T16:21:57: Paramètres reçus: { text: 'agriculture' }
+2026-01-27T16:21:57: Paramètres envoyés à l API: { text: 'agriculture' }
+2026-01-27T16:21:57: ✅ 146 résultats bruts de l API
+2026-01-27T16:21:58: 2026-01-27T15:21:58.123Z - GET /api/aides-territoires/search
+2026-01-27T16:21:58: 2026-01-27T15:21:58.133Z - GET /api/aides-territoires/search
+2026-01-27T16:21:58: Paramètres reçus: { text: 'entreprise', perimeter: 'sarthe' }
+2026-01-27T16:21:58: Paramètres envoyés à l API: { text: 'entreprise' }
+2026-01-27T16:21:58: ✅ 154 résultats bruts de l API
+2026-01-27T16:21:58: 🔍 Filtrage côté serveur pour: "sarthe"
+2026-01-27T16:21:58: ✅ 10 résultats après filtrage pour "sarthe"
+2026-01-27T16:22:56: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T16:22:56: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T16:22:56: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T16:25:13: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T16:25:13: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T16:25:13: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T16:25:13: 2026-01-27T15:25:13.692Z - GET /api/aides-territoires/search
+2026-01-27T16:25:13: 2026-01-27T15:25:13.699Z - GET /api/aides-territoires/search
+2026-01-27T16:25:13: Paramètres reçus: { text: 'entreprise', perimeter: '72' }
+2026-01-27T16:25:13: Paramètres envoyés à l API: { text: 'entreprise' }
+2026-01-27T16:25:14: ✅ Authentification Aides-Territoires réussie
+2026-01-27T16:25:14: ✅ 154 résultats bruts de l API
+2026-01-27T16:25:14: 🔍 Filtrage côté serveur pour: "72"
+2026-01-27T16:25:14: ✅ 11 résultats après filtrage pour "72"
+2026-01-27T16:25:14: 📍 Périmètres trouvés: Pays de la Loire, France
+2026-01-27T16:33:19: 2026-01-27T15:33:19.300Z - GET /api/aides-territoires/search
+2026-01-27T16:33:19: 2026-01-27T15:33:19.305Z - GET /api/aides-territoires/search
+2026-01-27T16:33:19: Paramètres reçus: { perimeter: 'Sarthe', text: 'voirie' }
+2026-01-27T16:33:19: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T16:33:20: ✅ 187 résultats bruts de l API
+2026-01-27T16:33:20: 🔍 Filtrage côté serveur pour: "sarthe"
+2026-01-27T16:33:20: ✅ 5 résultats après filtrage pour "sarthe"
+2026-01-27T16:33:20: 📍 Périmètres trouvés: Vendée, France
+2026-01-27T16:33:51: 2026-01-27T15:33:51.605Z - GET /api/aides-territoires/search
+2026-01-27T16:33:51: 2026-01-27T15:33:51.610Z - GET /api/aides-territoires/search
+2026-01-27T16:33:51: Paramètres reçus: { perimeter: 'pays de la loire', text: 'voirie' }
+2026-01-27T16:33:51: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T16:33:52: ✅ 187 résultats bruts de l API
+2026-01-27T16:33:52: 🔍 Filtrage côté serveur pour: "pays de la loire"
+2026-01-27T16:33:52: ✅ 3 résultats après filtrage pour "pays de la loire"
+2026-01-27T16:33:52: 📍 Périmètres trouvés: France
+2026-01-27T16:49:18: 2026-01-27T15:49:18.678Z - GET /api/aides-territoires/search
+2026-01-27T16:49:18: 2026-01-27T15:49:18.682Z - GET /api/aides-territoires/search
+2026-01-27T16:49:18: Paramètres reçus: { perimeter: 'Sarthe', text: 'sport' }
+2026-01-27T16:49:18: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T16:49:19: ✅ 87 résultats bruts de l API
+2026-01-27T16:49:19: 🔍 Filtrage côté serveur pour: "sarthe"
+2026-01-27T16:49:19: ✅ 2 résultats après filtrage pour "sarthe"
+2026-01-27T16:49:19: 📍 Périmètres trouvés: France, Vendée
+2026-01-27T16:51:43: 2026-01-27T15:51:43.034Z - GET /api/aides-territoires/search
+2026-01-27T16:51:43: 2026-01-27T15:51:43.037Z - GET /api/aides-territoires/search
+2026-01-27T16:51:43: Paramètres reçus: { text: 'sport' }
+2026-01-27T16:51:43: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T16:51:43: ✅ 87 résultats bruts de l API
+2026-01-27T16:51:43: 2026-01-27T15:51:43.874Z - GET /api/aides-territoires/search
+2026-01-27T16:51:43: 2026-01-27T15:51:43.879Z - GET /api/aides-territoires/search
+2026-01-27T16:51:43: Paramètres reçus: { text: 'sport', perimeter: 'pays de la loire' }
+2026-01-27T16:51:43: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T16:51:44: ✅ 87 résultats bruts de l API
+2026-01-27T16:51:44: 🔍 Filtrage côté serveur pour: "pays de la loire"
+2026-01-27T16:51:44: ✅ 1 résultats après filtrage pour "pays de la loire"
+2026-01-27T16:51:44: 📍 Périmètres trouvés: France
+2026-01-27T16:55:20: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T16:55:20: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T16:55:20: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T16:56:18: 2026-01-27T15:56:18.145Z - GET /api/projets
+2026-01-27T16:56:18: 2026-01-27T15:56:18.174Z - GET /api/dossiers
+2026-01-27T16:56:48: 2026-01-27T15:56:48.375Z - GET /api/aides-territoires/search
+2026-01-27T16:56:48: 2026-01-27T15:56:48.381Z - GET /api/aides-territoires/search
+2026-01-27T16:56:48: Paramètres reçus: { perimeter: 'Sarthe', text: 'sport' }
+2026-01-27T16:56:48: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T16:56:49: ✅ Authentification Aides-Territoires réussie
+2026-01-27T16:56:49: ✅ 87 résultats bruts de l API
+2026-01-27T16:56:49: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T16:56:49: ✅ 2 résultats après filtrage
+2026-01-27T16:56:49: 📍 Périmètres: France, Vendée
+2026-01-27T16:57:18: 2026-01-27T15:57:18.829Z - GET /api/aides-territoires/search
+2026-01-27T16:57:18: 2026-01-27T15:57:18.833Z - GET /api/aides-territoires/search
+2026-01-27T16:57:18: Paramètres reçus: { perimeter: 'Sarthe', text: 'gymnase' }
+2026-01-27T16:57:18: Paramètres envoyés à l API: { text: 'gymnase' }
+2026-01-27T16:57:19: ✅ 141 résultats bruts de l API
+2026-01-27T16:57:19: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T16:57:19: ✅ 5 résultats après filtrage
+2026-01-27T16:57:19: 📍 Périmètres: France, Pays de la Loire
+2026-01-27T16:57:34: 2026-01-27T15:57:34.875Z - GET /api/aides-territoires/search
+2026-01-27T16:57:34: 2026-01-27T15:57:34.877Z - GET /api/aides-territoires/search
+2026-01-27T16:57:34: Paramètres reçus: { perimeter: 'Sarthe', text: 'route' }
+2026-01-27T16:57:34: Paramètres envoyés à l API: { text: 'route' }
+2026-01-27T16:57:35: ✅ 127 résultats bruts de l API
+2026-01-27T16:57:35: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T16:57:35: ✅ 6 résultats après filtrage
+2026-01-27T16:57:35: 📍 Périmètres: Vendée, France
+2026-01-27T16:59:32: 2026-01-27T15:59:32.263Z - GET /api/aides-territoires/search
+2026-01-27T16:59:32: 2026-01-27T15:59:32.266Z - GET /api/aides-territoires/search
+2026-01-27T16:59:32: Paramètres reçus: { text: 'route', perimeter: 'sarthe' }
+2026-01-27T16:59:32: Paramètres envoyés à l API: { text: 'route' }
+2026-01-27T16:59:32: ✅ 127 résultats bruts de l API
+2026-01-27T16:59:32: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T16:59:32: ✅ 6 résultats après filtrage
+2026-01-27T16:59:32: 📍 Périmètres: Vendée, France
+2026-01-27T17:01:09: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T17:01:09: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T17:01:09: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T17:01:55: 2026-01-27T16:01:55.129Z - GET /api/aides-territoires/search
+2026-01-27T17:01:55: 2026-01-27T16:01:55.137Z - GET /api/aides-territoires/search
+2026-01-27T17:01:55: Paramètres reçus: { perimeter: 'Sarthe', text: 'route' }
+2026-01-27T17:01:55: Paramètres envoyés à l API: { text: 'route' }
+2026-01-27T17:01:55: ✅ Authentification Aides-Territoires réussie
+2026-01-27T17:01:56: ✅ 127 résultats bruts de l API
+2026-01-27T17:01:56: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T17:01:56:    ❌ Exclusion aide département spécifique: vendée
+2026-01-27T17:01:56:    ❌ Exclusion aide département spécifique: grand est
+2026-01-27T17:01:56: ✅ 5 résultats après filtrage
+2026-01-27T17:01:56: 📍 Périmètres finaux: France
+2026-01-27T17:02:03: 2026-01-27T16:02:03.918Z - GET /api/aides-territoires/search
+2026-01-27T17:02:03: 2026-01-27T16:02:03.921Z - GET /api/aides-territoires/search
+2026-01-27T17:02:03: Paramètres reçus: { perimeter: 'Sarthe', text: 'sport' }
+2026-01-27T17:02:03: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T17:02:04: ✅ 87 résultats bruts de l API
+2026-01-27T17:02:04: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T17:02:04:    ❌ Exclusion aide département spécifique: vendée
+2026-01-27T17:02:04:    ❌ Exclusion aide département spécifique: grand est
+2026-01-27T17:02:04: ✅ 1 résultats après filtrage
+2026-01-27T17:02:04: 📍 Périmètres finaux: France
+2026-01-27T17:02:17: 2026-01-27T16:02:17.070Z - GET /api/aides-territoires/search
+2026-01-27T17:02:17: 2026-01-27T16:02:17.072Z - GET /api/aides-territoires/search
+2026-01-27T17:02:17: Paramètres reçus: { text: 'sport' }
+2026-01-27T17:02:17: Paramètres envoyés à l API: { text: 'sport' }
+2026-01-27T17:02:17: ✅ 87 résultats bruts de l API
+2026-01-27T17:05:12: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T17:05:12: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T17:05:12: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T17:05:28: 2026-01-27T16:05:28.646Z - GET /api/aides-territoires/search
+2026-01-27T17:05:28: 2026-01-27T16:05:28.652Z - GET /api/aides-territoires/search
+2026-01-27T17:05:28: Paramètres reçus: { text: 'voirie' }
+2026-01-27T17:05:28: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:05:36: ✅ Authentification Aides-Territoires réussie
+2026-01-27T17:05:36: ✅ 187 résultats bruts de l API
+2026-01-27T17:05:52: 2026-01-27T16:05:52.093Z - GET /api/aides-territoires/search
+2026-01-27T17:05:52: 2026-01-27T16:05:52.097Z - GET /api/aides-territoires/search
+2026-01-27T17:05:52: Paramètres reçus: { perimeter: 'sarthe', text: 'voirie' }
+2026-01-27T17:05:52: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:05:52: ✅ 187 résultats bruts de l API
+2026-01-27T17:05:52: 🔍 Filtrage pour: "sarthe" (regional: true)
+2026-01-27T17:05:52: ✅ 3 résultats après filtrage
+2026-01-27T17:05:52: 📍 Périmètres finaux: France
+2026-01-27T17:13:30: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T17:13:30: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T17:13:30: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T17:13:30: 2026-01-27T16:13:30.757Z - GET /api/aides-territoires/search
+2026-01-27T17:13:30: 2026-01-27T16:13:30.762Z - GET /api/aides-territoires/search
+2026-01-27T17:13:30: Paramètres reçus: { targetedAudiences: 'commune', perimeter: 'sarthe' }
+2026-01-27T17:13:30: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:30: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:31: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:31: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:31: 2026-01-27T16:13:31.155Z - GET /api/aides-territoires/search
+2026-01-27T17:13:31: 2026-01-27T16:13:31.159Z - GET /api/aides-territoires/search
+2026-01-27T17:13:31: Paramètres reçus: { text: 'route', targetedAudiences: 'commune', perimeter: 'sarthe' }
+2026-01-27T17:13:31: Paramètres envoyés à l API: { text: 'route' }
+2026-01-27T17:13:31: 📡 Appel API avec params: {
+  text: 'route',
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:31: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:31: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:31: 2026-01-27T16:13:31.283Z - GET /api/aides-territoires/search
+2026-01-27T17:13:31: 2026-01-27T16:13:31.286Z - GET /api/aides-territoires/search
+2026-01-27T17:13:31: Paramètres reçus: { targetedAudiences: 'commune', perimeter: 'saint-mars-la-briere' }
+2026-01-27T17:13:31: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:31: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:31: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:31: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:46: 2026-01-27T16:13:46.883Z - GET /api/aides-territoires/search
+2026-01-27T17:13:46: 2026-01-27T16:13:46.885Z - GET /api/aides-territoires/search
+2026-01-27T17:13:46: Paramètres reçus: { perimeter: 'Saint Mars la Brière' }
+2026-01-27T17:13:46: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:46: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:46: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:46: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:49: 2026-01-27T16:13:49.421Z - GET /api/aides-territoires/search
+2026-01-27T17:13:49: 2026-01-27T16:13:49.423Z - GET /api/aides-territoires/search
+2026-01-27T17:13:49: Paramètres reçus: { perimeter: 'Saint Mars la Brière' }
+2026-01-27T17:13:49: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:49: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:49: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:49: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:50: 2026-01-27T16:13:50.256Z - GET /api/aides-territoires/search
+2026-01-27T17:13:50: 2026-01-27T16:13:50.259Z - GET /api/aides-territoires/search
+2026-01-27T17:13:50: Paramètres reçus: { perimeter: 'Saint Mars la Brière' }
+2026-01-27T17:13:50: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:50: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:50: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:50: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:13:55: 2026-01-27T16:13:55.708Z - GET /api/aides-territoires/search
+2026-01-27T17:13:55: 2026-01-27T16:13:55.710Z - GET /api/aides-territoires/search
+2026-01-27T17:13:55: Paramètres reçus: { perimeter: 'Saint Mars la Brière' }
+2026-01-27T17:13:55: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:13:55: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:13:55: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:13:55: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:14:23: 2026-01-27T16:14:23.369Z - GET /api/aides-territoires/search
+2026-01-27T17:14:23: 2026-01-27T16:14:23.372Z - GET /api/aides-territoires/search
+2026-01-27T17:14:23: Paramètres reçus: { perimeter: 'Saint Mars la Brière' }
+2026-01-27T17:14:23: Paramètres envoyés à l API: { text: '' }
+2026-01-27T17:14:23: 📡 Appel API avec params: {
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:14:23: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:14:23: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:16:21: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T17:16:21: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T17:16:21: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T17:16:21: 2026-01-27T16:16:21.916Z - GET /api/aides-territoires/test
+2026-01-27T17:16:22: ❌ Erreur authentification: 401 Request failed with status code 401
+2026-01-27T17:16:22: 2026-01-27T16:16:22.283Z - GET /api/aides-territoires/search
+2026-01-27T17:16:22: 2026-01-27T16:16:22.290Z - GET /api/aides-territoires/search
+2026-01-27T17:16:22: Paramètres reçus: { text: 'route', perimeter: 'sarthe' }
+2026-01-27T17:16:22: Paramètres envoyés à l API: { text: 'route' }
+2026-01-27T17:16:22: 📡 Appel API avec params: {
+  text: 'route',
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:16:22: ❌ Erreur recherche aides: 401 Request failed with status code 401
+2026-01-27T17:16:22: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:16:40: 2026-01-27T16:16:40.360Z - GET /api/aides-territoires/search
+2026-01-27T17:16:40: 2026-01-27T16:16:40.362Z - GET /api/aides-territoires/search
+2026-01-27T17:16:40: Paramètres reçus: { text: 'voirie' }
+2026-01-27T17:16:40: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:16:40: 📡 Appel API avec params: {
+  text: 'voirie',
+  targeted_audiences: 'commune',
+  orderBy: 'relevance',
+  page: 1,
+  page_size: 50
+}
+2026-01-27T17:16:40: ❌ Erreur recherche aides: 401 Request failed with status code 401
+2026-01-27T17:16:40: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:17:23: 🚀 Serveur Granto démarré sur le port 3001
+2026-01-27T17:17:23: 📡 API accessible sur http://0.0.0.0:3001
+2026-01-27T17:17:23: 🏥 Health check: http://0.0.0.0:3001/health
+2026-01-27T17:17:23: 2026-01-27T16:17:23.787Z - GET /api/aides-territoires/test
+2026-01-27T17:17:24: ❌ Erreur authentification: Request failed with status code 401
+2026-01-27T17:17:24: Erreur test API: Request failed with status code 401
+2026-01-27T17:17:24: 2026-01-27T16:17:24.173Z - GET /api/aides-territoires/search
+2026-01-27T17:17:24: 2026-01-27T16:17:24.180Z - GET /api/aides-territoires/search
+2026-01-27T17:17:24: Paramètres reçus: { text: 'voirie' }
+2026-01-27T17:17:24: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:17:24: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:17:24: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:17:39: 2026-01-27T16:17:39.765Z - GET /api/aides-territoires/search
+2026-01-27T17:17:39: 2026-01-27T16:17:39.767Z - GET /api/aides-territoires/search
+2026-01-27T17:17:39: Paramètres reçus: { text: 'voirie' }
+2026-01-27T17:17:39: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:17:39: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:17:39: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:17:42: 2026-01-27T16:17:42.765Z - GET /api/aides-territoires/search
+2026-01-27T17:17:42: 2026-01-27T16:17:42.766Z - GET /api/aides-territoires/search
+2026-01-27T17:17:42: Paramètres reçus: { text: 'voirie' }
+2026-01-27T17:17:42: Paramètres envoyés à l API: { text: 'voirie' }
+2026-01-27T17:17:42: ❌ Erreur recherche aides: Request failed with status code 401
+2026-01-27T17:17:42: ❌ Erreur recherche: Request failed with status code 401
+2026-01-27T17:38:55: 2026-01-27T16:38:55.079Z - POST /
+2026-01-27T17:38:55: 2026-01-27T16:38:55.160Z - POST /_next
+2026-01-27T17:38:55: 2026-01-27T16:38:55.230Z - POST /api
+2026-01-27T17:38:55: 2026-01-27T16:38:55.301Z - POST /_next/server
+2026-01-27T17:38:55: 2026-01-27T16:38:55.374Z - POST /app
+2026-01-27T17:38:55: 2026-01-27T16:38:55.445Z - POST /api/route
+2026-01-27T18:04:15: 2026-01-27T17:04:15.091Z - POST /
+2026-01-27T20:13:53: 2026-01-27T19:13:53.448Z - POST /
+2026-01-27T20:27:01: 2026-01-27T19:27:01.737Z - POST /
+2026-01-27T21:42:13: 2026-01-27T20:42:13.854Z - POST /
+2026-01-27T22:33:02: 2026-01-27T21:33:02.003Z - POST /
+2026-01-27T23:32:59: 2026-01-27T22:32:59.337Z - POST /
+2026-01-28T01:38:55: 2026-01-28T00:38:55.653Z - POST /
+2026-01-28T02:02:00: 2026-01-28T01:02:00.848Z - POST /
+2026-01-28T02:02:00: 2026-01-28T01:02:00.920Z - POST /_next
+2026-01-28T02:02:01: 2026-01-28T01:02:01.057Z - POST /api
+2026-01-28T02:02:01: 2026-01-28T01:02:01.126Z - POST /_next/server
+2026-01-28T02:02:01: 2026-01-28T01:02:01.194Z - POST /app
+2026-01-28T02:02:01: 2026-01-28T01:02:01.262Z - POST /api/route
+2026-01-28T03:10:14: 2026-01-28T02:10:14.496Z - POST /
+2026-01-28T03:29:08: 2026-01-28T02:29:08.170Z - HEAD /
+2026-01-28T03:29:08: 2026-01-28T02:29:08.592Z - GET /
+2026-01-28T03:29:08: 2026-01-28T02:29:08.786Z - HEAD /_next
+2026-01-28T03:29:09: 2026-01-28T02:29:09.067Z - POST /
+2026-01-28T03:29:09: 2026-01-28T02:29:09.309Z - POST /_next
+2026-01-28T04:55:39: 2026-01-28T03:55:39.954Z - POST /api
+2026-01-28T04:55:55: 2026-01-28T03:55:55.065Z - POST /api/route
+2026-01-28T05:04:14: 2026-01-28T04:04:14.228Z - POST /api
+2026-01-28T05:04:23: 2026-01-28T04:04:23.365Z - POST /api/route
+2026-01-28T05:25:36: 2026-01-28T04:25:36.585Z - GET /
+2026-01-28T05:27:16: 2026-01-28T04:27:16.589Z - GET /
+2026-01-28T05:30:57: 2026-01-28T04:30:57.899Z - POST /
+2026-01-28T06:24:19: 2026-01-28T05:24:19.093Z - POST /
+2026-01-28T07:57:09: 2026-01-28T06:57:09.224Z - POST /
+2026-01-28T10:01:51: 2026-01-28T09:01:51.217Z - POST /
+2026-01-28T10:32:29: 2026-01-28T09:32:29.923Z - POST /_next
+2026-01-28T10:32:54: 2026-01-28T09:32:54.968Z - POST /_next/server
+2026-01-28T10:33:21: 2026-01-28T09:33:21.012Z - POST /api/route
+2026-01-28T10:54:01: 2026-01-28T09:54:01.475Z - POST /api
+2026-01-28T10:54:08: 2026-01-28T09:54:08.782Z - POST /api/route
+2026-01-28T12:20:26: 2026-01-28T11:20:26.958Z - POST /

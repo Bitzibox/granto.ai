@@ -1,0 +1,387 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Search,
+  MapPin,
+  Calendar,
+  Euro,
+  Building2,
+  Filter,
+  ExternalLink,
+  Plus,
+  ChevronDown,
+  Loader2
+} from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Slider } from '@/components/ui/slider'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+
+const API_BASE_URL = typeof window !== 'undefined' 
+  ? `http://${window.location.hostname}:3001`
+  : 'http://localhost:3001'
+
+export function GrantSearch() {
+  const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [territoireSearch, setTerritoireSearch] = useState('')
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selectedDispositif, setSelectedDispositif] = useState(null)
+  const [showProjectModal, setShowProjectModal] = useState(false)
+  const [projects, setProjects] = useState([])
+  const [loadingProjects, setLoadingProjects] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  useEffect(() => {
+    if (showProjectModal && selectedDispositif) {
+      loadProjects()
+    }
+  }, [showProjectModal, selectedDispositif])
+
+  const loadProjects = async () => {
+    setLoadingProjects(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projets`)
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des projets:', err)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
+
+  const handleSearch = async (e) => {
+    if (e) e.preventDefault()
+    
+    setLoading(true)
+    setSearched(true)
+
+    try {
+      const params = new URLSearchParams()
+      
+      // Utiliser "perimeter" au lieu de "targeted_audiences" pour le territoire
+      if (territoireSearch) {
+        params.append('perimeter', territoireSearch)
+      }
+      
+      if (searchTerm) {
+        params.append('text', searchTerm)
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/aides-territoires/search?${params.toString()}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la recherche')
+      }
+
+      const data = await response.json()
+      setResults(data.results || [])
+    } catch (err) {
+      console.error('Erreur:', err)
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddToProject = async (projectId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/dossiers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projet_id: projectId,
+          dispositif_id: selectedDispositif.id,
+          nom: `Dossier ${selectedDispositif.name}`,
+          statut: 'brouillon',
+          dispositif_data: selectedDispositif
+        }),
+      })
+
+      if (response.ok) {
+        alert('✅ Dossier créé avec succès !')
+        setShowProjectModal(false)
+        setSelectedDispositif(null)
+      } else {
+        alert('❌ Erreur lors de la création du dossier')
+      }
+    } catch (err) {
+      console.error('Erreur:', err)
+      alert('❌ Erreur lors de la création du dossier')
+    }
+  }
+
+  const handleViewOnAidesTerritoires = (dispositif) => {
+    if (dispositif.url) {
+      window.open(dispositif.url, '_blank')
+    } else {
+      const baseUrl = 'https://aides-territoires.beta.gouv.fr/aides'
+      const searchUrl = `${baseUrl}/?text=${encodeURIComponent(dispositif.name)}`
+      window.open(searchUrl, '_blank')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Recherche de subventions</h1>
+        <p className="text-slate-600">
+          Recherchez parmi plus de 3000 aides et subventions disponibles
+        </p>
+      </div>
+
+      {/* Barre de recherche */}
+      <Card>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSearch}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <Search className="h-4 w-4 inline mr-2" />
+                  Mots-clés
+                </label>
+                <Input
+                  placeholder="Ex: panneaux solaires, voirie, sport..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <MapPin className="h-4 w-4 inline mr-2" />
+                  Territoire
+                </label>
+                <Input
+                  placeholder="Ex: Saint-Mars-la-Brière, Sarthe, 72300..."
+                  value={territoireSearch}
+                  onChange={(e) => setTerritoireSearch(e.target.value)}
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Nom de commune, département, code postal ou code INSEE
+                </p>
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  type="submit"
+                  className="w-full"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Recherche...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Rechercher
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Résultats */}
+      {searched && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {results.length} dispositif{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}
+            </h2>
+          </div>
+
+          {loading ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Loader2 className="h-12 w-12 mx-auto mb-4 text-blue-600 animate-spin" />
+                <p className="text-slate-600">Recherche en cours sur Aides-Territoires...</p>
+              </CardContent>
+            </Card>
+          ) : results.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Search className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-600 mb-2">
+                  Aucun dispositif trouvé avec ces critères
+                </p>
+                <p className="text-sm text-slate-500">
+                  Essayez avec d'autres mots-clés ou un territoire différent
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            results.map((dispositif) => (
+              <Card
+                key={dispositif.id}
+                className="border border-slate-200 hover:shadow-lg transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-2">
+                        {dispositif.name}
+                      </CardTitle>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {dispositif.aid_types?.map((type, idx) => (
+                          <Badge key={idx} variant="secondary">{type}</Badge>
+                        ))}
+                        {dispositif.recurrence && (
+                          <Badge variant="outline">{dispositif.recurrence}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <p className="text-slate-700 line-clamp-3">
+                    {dispositif.description || 'Aucune description disponible'}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {dispositif.financers && dispositif.financers.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-slate-500" />
+                        <span className="text-slate-600">
+                          {dispositif.financers[0].name}
+                        </span>
+                      </div>
+                    )}
+
+                    {dispositif.submission_deadline && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-slate-500" />
+                        <span className="text-slate-600">
+                          Date limite: {new Date(dispositif.submission_deadline).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                    )}
+
+                    {dispositif.perimeter && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-slate-500" />
+                        <span className="text-slate-600">
+                          {dispositif.perimeter}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewOnAidesTerritoires(dispositif)
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Voir sur Aides-Territoires
+                    </Button>
+                    <Button
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedDispositif(dispositif)
+                        setShowProjectModal(true)
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {!searched && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Search className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+            <p className="text-slate-600 mb-2">
+              Recherchez parmi plus de 3000 aides disponibles
+            </p>
+            <p className="text-sm text-slate-500">
+              Utilisez les champs ci-dessus pour trouver les subventions adaptées à votre projet
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modale d'ajout à un projet */}
+      <Dialog open={showProjectModal} onOpenChange={setShowProjectModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Associer à un projet</DialogTitle>
+          </DialogHeader>
+
+          {loadingProjects ? (
+            <p>Chargement des projets...</p>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-600 mb-4">
+                Vous n'avez pas encore de projet
+              </p>
+              <Button onClick={() => {
+                setShowProjectModal(false)
+                router.push('/projets')
+              }}>
+                Créer un projet
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {projects.map((project) => (
+                <Card
+                  key={project.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleAddToProject(project.id)}
+                >
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold mb-2">{project.nom}</h3>
+                    <p className="text-sm text-slate-600 mb-2">
+                      {project.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      {project.budget && (
+                        <span className="flex items-center gap-1">
+                          <Euro className="h-3 w-3" />
+                          {project.budget.toLocaleString('fr-FR')} €
+                        </span>
+                      )}
+                      <Badge variant="outline">{project.statut}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
