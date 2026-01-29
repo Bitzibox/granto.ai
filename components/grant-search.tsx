@@ -11,7 +11,10 @@ import {
   Filter,
   ExternalLink,
   Plus,
-  TrendingUp
+  TrendingUp,
+  X,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,12 +26,49 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+// Types d'aide disponibles
+const TYPES_AIDE = [
+  { value: '', label: 'Tous les types' },
+  { value: 'grant', label: 'Subvention' },
+  { value: 'loan', label: 'Prêt' },
+  { value: 'recoverable_advance', label: 'Avance récupérable' },
+  { value: 'tax_benefit', label: 'Avantage fiscal' },
+  { value: 'cee', label: 'CEE' },
+  { value: 'technical_engineering', label: 'Ingénierie technique' },
+  { value: 'financial_engineering', label: 'Ingénierie financière' },
+  { value: 'legal_engineering', label: 'Ingénierie juridique' },
+  { value: 'other', label: 'Autre' },
+]
+
+// Catégories thématiques
+const CATEGORIES = [
+  { value: '', label: 'Toutes les catégories' },
+  { value: 'environnement', label: 'Environnement' },
+  { value: 'energie', label: 'Énergie' },
+  { value: 'urbanisme', label: 'Urbanisme' },
+  { value: 'mobilite', label: 'Mobilité' },
+  { value: 'culture', label: 'Culture' },
+  { value: 'education', label: 'Éducation' },
+  { value: 'sante', label: 'Santé' },
+  { value: 'numerique', label: 'Numérique' },
+  { value: 'agriculture', label: 'Agriculture' },
+  { value: 'tourisme', label: 'Tourisme' },
+]
 
 export function GrantSearch() {
   const router = useRouter()
   const [territoire, setTerritoire] = useState('')
   const [motsCles, setMotsCles] = useState('')
   const [typeAide, setTypeAide] = useState('')
+  const [categorie, setCategorie] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +76,9 @@ export function GrantSearch() {
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
   const [loadingProjects, setLoadingProjects] = useState(false)
+  const [addingToProject, setAddingToProject] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [hasSearched, setHasSearched] = useState(false)
 
   // Fonction pour obtenir le badge territorial
   const getTerritorialBadge = (scale: string) => {
@@ -134,16 +177,18 @@ export function GrantSearch() {
     }
   }
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSearch = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault()
     setLoading(true)
     setError(null)
+    setHasSearched(true)
 
     try {
       const params = new URLSearchParams()
       if (territoire) params.append('targeted_audiences', territoire)
       if (motsCles) params.append('text', motsCles)
       if (typeAide) params.append('aid_types', typeAide)
+      if (categorie) params.append('categories', categorie)
 
       const response = await fetch(
         `/api/aides-territoires/search?${params.toString()}`
@@ -154,16 +199,16 @@ export function GrantSearch() {
       }
 
       const data = await response.json()
-      
+
       // Calculer les scores de compatibilité et trier
       const resultsWithScores = (data.results || []).map(aid => ({
         ...aid,
         compatibility: calculateCompatibilityScore(aid, territoire, motsCles)
       }))
-      
+
       // Trier par score décroissant
       resultsWithScores.sort((a, b) => b.compatibility.score - a.compatibility.score)
-      
+
       setResults(resultsWithScores)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue')
@@ -173,33 +218,78 @@ export function GrantSearch() {
     }
   }
 
+  // Réinitialiser les filtres
+  const handleClearFilters = () => {
+    setTerritoire('')
+    setMotsCles('')
+    setTypeAide('')
+    setCategorie('')
+  }
+
   const handleAddToProject = async (projectId: string) => {
     if (!selectedDispositif) return
+    setAddingToProject(projectId)
+
     try {
-      const response = await fetch('/api/dossiers', {
+      // Construire l'URL du dispositif
+      const dispositifUrl = selectedDispositif.url || `https://aides-territoires.beta.gouv.fr/aides/${selectedDispositif.slug}/`
+
+      // 1. D'abord créer ou récupérer le dispositif
+      const dispositifResponse = await fetch('/api/dispositifs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projet_id: projectId,
-          dispositif_id: selectedDispositif.id,
-          nom: `Dossier ${selectedDispositif.name}`,
-          statut: 'brouillon',
-          dispositif_data: selectedDispositif
+          nom: selectedDispositif.name,
+          description: selectedDispositif.description || '',
+          organisme: selectedDispositif.financers?.[0] || 'Non spécifié',
+          typesProjets: selectedDispositif.categories || [],
+          url: dispositifUrl,
+          dateOuverture: selectedDispositif.start_date || null,
+          dateCloture: selectedDispositif.submission_deadline || null,
+          montantMin: selectedDispositif.subvention_rate_lower_bound || null,
+          montantMax: selectedDispositif.subvention_rate_upper_bound || null,
+          criteresEligibilite: selectedDispositif.eligibility || '',
+          zonesEligibles: selectedDispositif.perimeter ? [selectedDispositif.perimeter] : [],
         }),
       })
 
-      if (response.ok) {
-        alert('✅ Dossier créé avec succès !')
-        setShowProjectModal(false)
-        setSelectedDispositif(null)
-      } else {
-        alert('❌ Erreur lors de la création du dossier')
+      if (!dispositifResponse.ok) {
+        const errorData = await dispositifResponse.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de la création du dispositif')
       }
+
+      const dispositif = await dispositifResponse.json()
+
+      // 2. Ensuite créer le dossier de subvention
+      const dossierResponse = await fetch('/api/dossiers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projetId: projectId,
+          dispositifId: dispositif.id,
+        }),
+      })
+
+      if (!dossierResponse.ok) {
+        const errorData = await dossierResponse.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de la création du dossier')
+      }
+
+      setSuccessMessage(`Dossier créé avec succès pour "${selectedDispositif.name}"`)
+      setShowProjectModal(false)
+      setSelectedDispositif(null)
+
+      // Masquer le message de succès après 5 secondes
+      setTimeout(() => setSuccessMessage(null), 5000)
     } catch (err) {
       console.error('Erreur:', err)
-      alert('❌ Erreur lors de la création du dossier')
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création du dossier')
+    } finally {
+      setAddingToProject(null)
     }
   }
 
@@ -225,6 +315,22 @@ export function GrantSearch() {
         </p>
       </div>
 
+      {/* Message de succès */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <span className="text-green-800">{successMessage}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setSuccessMessage(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -234,7 +340,7 @@ export function GrantSearch() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
                   <MapPin className="h-4 w-4 inline mr-2" />
@@ -253,7 +359,7 @@ export function GrantSearch() {
                   Mots-clés
                 </label>
                 <Input
-                  placeholder="Ex: panneaux solaires, rénovation"
+                  placeholder="Ex: panneaux solaires"
                   value={motsCles}
                   onChange={(e) => setMotsCles(e.target.value)}
                 />
@@ -264,17 +370,65 @@ export function GrantSearch() {
                   <Building2 className="h-4 w-4 inline mr-2" />
                   Type d'aide
                 </label>
-                <Input
-                  placeholder="Ex: subvention, prêt"
-                  value={typeAide}
-                  onChange={(e) => setTypeAide(e.target.value)}
-                />
+                <Select value={typeAide} onValueChange={setTypeAide}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPES_AIDE.map((type) => (
+                      <SelectItem key={type.value} value={type.value || 'all'}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <Filter className="h-4 w-4 inline mr-2" />
+                  Catégorie
+                </label>
+                <Select value={categorie} onValueChange={setCategorie}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value || 'all'}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Recherche en cours...' : 'Rechercher'}
-            </Button>
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Recherche en cours...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Rechercher
+                  </>
+                )}
+              </Button>
+              {(territoire || motsCles || typeAide || categorie) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClearFilters}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Effacer
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -402,38 +556,63 @@ export function GrantSearch() {
             <DialogTitle>Associer à un projet</DialogTitle>
           </DialogHeader>
 
+          {selectedDispositif && (
+            <div className="bg-slate-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-slate-600 mb-1">Aide sélectionnée :</p>
+              <p className="font-medium">{selectedDispositif.name}</p>
+            </div>
+          )}
+
           {loadingProjects ? (
-            <p>Chargement des projets...</p>
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-slate-400 mb-2" />
+              <p className="text-slate-600">Chargement des projets...</p>
+            </div>
           ) : projects.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-600 mb-4">
                 Vous n'avez pas encore de projet
               </p>
               <Button onClick={() => router.push('/projets')}>
+                <Plus className="h-4 w-4 mr-2" />
                 Créer un projet
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                Sélectionnez un projet pour y associer cette aide :
+              </p>
               {projects.map((project) => (
                 <Card
                   key={project.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleAddToProject(project.id)}
+                  className={`cursor-pointer hover:shadow-md transition-all border-2 ${
+                    addingToProject === project.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-transparent hover:border-slate-200'
+                  }`}
+                  onClick={() => !addingToProject && handleAddToProject(project.id)}
                 >
                   <CardContent className="pt-6">
-                    <h3 className="font-semibold mb-2">{project.nom}</h3>
-                    <p className="text-sm text-slate-600 mb-2">
-                      {project.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      {project.budget && (
-                        <span className="flex items-center gap-1">
-                          <Euro className="h-3 w-3" />
-                          {project.budget.toLocaleString('fr-FR')} €
-                        </span>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-2">{project.titre}</h3>
+                        <p className="text-sm text-slate-600 mb-2 line-clamp-2">
+                          {project.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                          {project.montantTtc && (
+                            <span className="flex items-center gap-1">
+                              <Euro className="h-3 w-3" />
+                              {parseFloat(project.montantTtc).toLocaleString('fr-FR')} € TTC
+                            </span>
+                          )}
+                          <Badge variant="outline">{project.statut}</Badge>
+                        </div>
+                      </div>
+                      {addingToProject === project.id && (
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                       )}
-                      <Badge variant="outline">{project.statut}</Badge>
                     </div>
                   </CardContent>
                 </Card>

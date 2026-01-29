@@ -32,14 +32,60 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST créer un dispositif
+// POST créer un dispositif (ou retourner l'existant si URL identique)
 router.post('/', async (req, res) => {
   try {
-    const dispositif = await prisma.dispositif.create({ 
-      data: req.body 
+    const {
+      nom,
+      description,
+      organisme,
+      typesProjets,
+      tauxMin,
+      tauxMax,
+      montantMin,
+      montantMax,
+      zonesEligibles,
+      dateOuverture,
+      dateCloture,
+      url,
+      criteresEligibilite,
+      documentsRequis
+    } = req.body;
+
+    // Si URL fournie, vérifier si le dispositif existe déjà
+    if (url) {
+      const existant = await prisma.dispositif.findFirst({
+        where: { url }
+      });
+
+      if (existant) {
+        // Retourner le dispositif existant
+        return res.status(200).json(existant);
+      }
+    }
+
+    // Créer le nouveau dispositif
+    const dispositif = await prisma.dispositif.create({
+      data: {
+        nom: nom || 'Dispositif sans nom',
+        description,
+        organisme,
+        typesProjets: typesProjets || [],
+        tauxMin,
+        tauxMax,
+        montantMin: montantMin ? parseInt(montantMin) : null,
+        montantMax: montantMax ? parseInt(montantMax) : null,
+        zonesEligibles: zonesEligibles || [],
+        dateOuverture: dateOuverture ? new Date(dateOuverture) : null,
+        dateCloture: dateCloture ? new Date(dateCloture) : null,
+        url,
+        criteresEligibilite,
+        documentsRequis: documentsRequis || []
+      }
     });
     res.status(201).json(dispositif);
   } catch (error) {
+    console.error('Erreur création dispositif:', error);
     res.status(500).json({ error: error.message });
   }
 });
