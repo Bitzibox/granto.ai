@@ -80,6 +80,48 @@ export function GrantSearch() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
 
+  // Restaurer les critères et résultats de recherche au montage du composant
+  useEffect(() => {
+    const savedSearch = localStorage.getItem('granto_search_criteria')
+    const savedResults = localStorage.getItem('granto_search_results')
+
+    if (savedSearch) {
+      try {
+        const criteria = JSON.parse(savedSearch)
+        setTerritoire(criteria.territoire || '')
+        setMotsCles(criteria.motsCles || '')
+        setTypeAide(criteria.typeAide || '')
+        setCategorie(criteria.categorie || '')
+
+        // Restaurer aussi les résultats si disponibles et récents (moins de 30 min)
+        if (savedResults) {
+          const resultsData = JSON.parse(savedResults)
+          const thirtyMinutes = 30 * 60 * 1000
+          if (Date.now() - resultsData.timestamp < thirtyMinutes) {
+            setResults(resultsData.results)
+            setHasSearched(true)
+          }
+        }
+      } catch (err) {
+        console.error('Erreur lors de la restauration des critères:', err)
+      }
+    }
+  }, [])
+
+  // Sauvegarder les critères de recherche à chaque modification
+  useEffect(() => {
+    if (hasSearched) {
+      const criteria = {
+        territoire,
+        motsCles,
+        typeAide,
+        categorie,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('granto_search_criteria', JSON.stringify(criteria))
+    }
+  }, [territoire, motsCles, typeAide, categorie, hasSearched])
+
   // Fonction pour obtenir le badge territorial
   const getTerritorialBadge = (scale: string) => {
     const badges = {
@@ -184,6 +226,7 @@ export function GrantSearch() {
     setHasSearched(true)
 
     try {
+      // 1. Recherche avec les critères de l'utilisateur
       const params = new URLSearchParams()
       if (territoire) params.append('targeted_audiences', territoire)
       if (motsCles) params.append('text', motsCles)
@@ -199,9 +242,39 @@ export function GrantSearch() {
       }
 
       const data = await response.json()
+      let allResults = data.results || []
+
+      // 2. Si un territoire est spécifié, récupérer aussi les aides nationales
+      if (territoire) {
+        const nationalParams = new URLSearchParams()
+        nationalParams.append('perimeter_scale', 'France')
+        if (motsCles) nationalParams.append('text', motsCles)
+        if (typeAide) nationalParams.append('aid_types', typeAide)
+        if (categorie) nationalParams.append('categories', categorie)
+
+        try {
+          const nationalResponse = await fetch(
+            `/api/aides-territoires/search?${nationalParams.toString()}`
+          )
+          if (nationalResponse.ok) {
+            const nationalData = await nationalResponse.json()
+            const nationalResults = nationalData.results || []
+
+            // Fusionner en évitant les doublons (par id)
+            const existingIds = new Set(allResults.map((aid: any) => aid.id))
+            const newNationalResults = nationalResults.filter(
+              (aid: any) => !existingIds.has(aid.id)
+            )
+            allResults = [...allResults, ...newNationalResults]
+          }
+        } catch (err) {
+          console.warn('Erreur lors de la récupération des aides nationales:', err)
+          // Continue avec les résultats régionaux
+        }
+      }
 
       // Calculer les scores de compatibilité et trier
-      const resultsWithScores = (data.results || []).map(aid => ({
+      const resultsWithScores = allResults.map(aid => ({
         ...aid,
         compatibility: calculateCompatibilityScore(aid, territoire, motsCles)
       }))
@@ -210,6 +283,12 @@ export function GrantSearch() {
       resultsWithScores.sort((a, b) => b.compatibility.score - a.compatibility.score)
 
       setResults(resultsWithScores)
+
+      // Sauvegarder les résultats dans localStorage
+      localStorage.setItem('granto_search_results', JSON.stringify({
+        results: resultsWithScores,
+        timestamp: Date.now()
+      }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue')
       console.error('Erreur:', err)
@@ -224,6 +303,12 @@ export function GrantSearch() {
     setMotsCles('')
     setTypeAide('')
     setCategorie('')
+    setResults([])
+    setHasSearched(false)
+
+    // Supprimer les données sauvegardées
+    localStorage.removeItem('granto_search_criteria')
+    localStorage.removeItem('granto_search_results')
   }
 
   const handleAddToProject = async (projectId: string) => {

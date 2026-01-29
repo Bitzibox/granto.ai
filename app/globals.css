@@ -3,54 +3,86 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Backgrounds - Subtle warm tint for modern feel */
-  --background: oklch(0.99 0.005 90);
-  --foreground: oklch(0.15 0.01 270);
+  /* Dark theme by default - Elsi inspired */
+  /* Backgrounds - Very dark with subtle blue tint */
+  --background: oklch(0.10 0.015 260);
+  --foreground: oklch(0.98 0.005 260);
 
-  /* Cards with subtle elevation */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 270);
+  /* Cards - Slightly elevated dark surfaces */
+  --card: oklch(0.13 0.015 260);
+  --card-foreground: oklch(0.98 0.005 260);
 
   /* Popovers */
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 270);
+  --popover: oklch(0.13 0.015 260);
+  --popover-foreground: oklch(0.98 0.005 260);
 
-  /* Primary - Modern blue/violet gradient base */
-  --primary: oklch(0.55 0.22 265);
+  /* Primary - Vibrant purple/violet like Elsi */
+  --primary: oklch(0.65 0.24 285);
   --primary-foreground: oklch(0.99 0 0);
 
-  /* Secondary - Soft purple/lavender */
-  --secondary: oklch(0.95 0.02 280);
-  --secondary-foreground: oklch(0.3 0.08 270);
+  /* Secondary - Dark elevated surface */
+  --secondary: oklch(0.18 0.02 265);
+  --secondary-foreground: oklch(0.95 0.01 260);
 
-  /* Muted - Light with subtle color */
-  --muted: oklch(0.97 0.01 270);
-  --muted-foreground: oklch(0.5 0.02 270);
+  /* Muted - Dark with subtle color */
+  --muted: oklch(0.20 0.02 265);
+  --muted-foreground: oklch(0.62 0.02 260);
 
-  /* Accent - Vibrant coral/orange for CTAs */
-  --accent: oklch(0.75 0.15 35);
+  /* Accent - Vibrant blue for CTAs */
+  --accent: oklch(0.55 0.20 245);
   --accent-foreground: oklch(0.99 0 0);
 
   /* Destructive - Modern red */
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
 
-  /* Borders - Subtle with slight color */
-  --border: oklch(0.92 0.01 270);
-  --input: oklch(0.96 0.01 270);
-  --ring: oklch(0.55 0.22 265);
+  /* Borders - Very subtle dark */
+  --border: oklch(0.22 0.015 260);
+  --input: oklch(0.16 0.015 260);
+  --ring: oklch(0.65 0.24 285);
 
   /* Charts - Vibrant modern palette */
-  --chart-1: oklch(0.65 0.24 265);
-  --chart-2: oklch(0.70 0.18 180);
-  --chart-3: oklch(0.75 0.15 35);
-  --chart-4: oklch(0.70 0.20 140);
-  --chart-5: oklch(0.65 0.22 320);
+  --chart-1: oklch(0.65 0.24 285);
+  --chart-2: oklch(0.60 0.20 245);
+  --chart-3: oklch(0.70 0.18 35);
+  --chart-4: oklch(0.65 0.20 160);
+  --chart-5: oklch(0.60 0.22 320);
 
   /* Border radius - More modern */
   --radius: 0.75rem;
 
-  /* Sidebar - Modern gradient feel */
+  /* Sidebar - Very dark like Elsi */
+  --sidebar: oklch(0.08 0.015 260);
+  --sidebar-foreground: oklch(0.95 0.01 260);
+  --sidebar-primary: oklch(0.65 0.24 285);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.15 0.02 265);
+  --sidebar-accent-foreground: oklch(0.90 0.01 260);
+  --sidebar-border: oklch(0.18 0.015 260);
+  --sidebar-ring: oklch(0.65 0.24 285);
+}
+
+/* Light mode variant (optional, keep for flexibility) */
+.light {
+  --background: oklch(0.99 0.005 90);
+  --foreground: oklch(0.15 0.01 270);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.01 270);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.01 270);
+  --primary: oklch(0.55 0.22 265);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.02 280);
+  --secondary-foreground: oklch(0.3 0.08 270);
+  --muted: oklch(0.97 0.01 270);
+  --muted-foreground: oklch(0.5 0.02 270);
+  --accent: oklch(0.55 0.20 245);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.92 0.01 270);
+  --input: oklch(0.96 0.01 270);
+  --ring: oklch(0.55 0.22 265);
   --sidebar: oklch(0.98 0.01 265);
   --sidebar-foreground: oklch(0.20 0.03 270);
   --sidebar-primary: oklch(0.55 0.22 265);
@@ -61,65 +93,9 @@
   --sidebar-ring: oklch(0.55 0.22 265);
 }
 
-.dark {
-  /* Backgrounds - Deep with subtle blue tint */
-  --background: oklch(0.15 0.02 270);
-  --foreground: oklch(0.97 0.01 270);
-
-  /* Cards - Elevated dark surfaces */
-  --card: oklch(0.18 0.02 270);
-  --card-foreground: oklch(0.97 0.01 270);
-
-  /* Popovers */
-  --popover: oklch(0.18 0.02 270);
-  --popover-foreground: oklch(0.97 0.01 270);
-
-  /* Primary - Bright blue/violet for dark mode */
-  --primary: oklch(0.70 0.20 265);
-  --primary-foreground: oklch(0.99 0 0);
-
-  /* Secondary */
-  --secondary: oklch(0.25 0.03 270);
-  --secondary-foreground: oklch(0.97 0.01 270);
-
-  /* Muted */
-  --muted: oklch(0.25 0.02 270);
-  --muted-foreground: oklch(0.65 0.02 270);
-
-  /* Accent - Vibrant in dark mode */
-  --accent: oklch(0.70 0.18 35);
-  --accent-foreground: oklch(0.15 0.02 270);
-
-  /* Destructive */
-  --destructive: oklch(0.60 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-
-  /* Borders */
-  --border: oklch(0.30 0.02 270);
-  --input: oklch(0.25 0.02 270);
-  --ring: oklch(0.70 0.20 265);
-
-  /* Charts - Vibrant for dark mode */
-  --chart-1: oklch(0.70 0.20 265);
-  --chart-2: oklch(0.75 0.18 180);
-  --chart-3: oklch(0.75 0.15 35);
-  --chart-4: oklch(0.75 0.20 140);
-  --chart-5: oklch(0.70 0.22 320);
-
-  /* Sidebar - Deep elegant dark */
-  --sidebar: oklch(0.12 0.02 270);
-  --sidebar-foreground: oklch(0.90 0.01 270);
-  --sidebar-primary: oklch(0.70 0.20 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.20 0.03 270);
-  --sidebar-accent-foreground: oklch(0.90 0.01 270);
-  --sidebar-border: oklch(0.25 0.02 270);
-  --sidebar-ring: oklch(0.70 0.20 265);
-}
-
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

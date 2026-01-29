@@ -1,11 +1,13 @@
 import React from 'react'
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { GrantoLayout } from '@/components/granto-layout'
 import './globals.css'
 
-const geist = Geist({ subsets: ["latin"] })
-const geistMono = Geist_Mono({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: '--font-sans',
+})
 
 export const metadata: Metadata = {
   title: 'Granto - Assistant Subventions',
@@ -19,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${geist.className} ${geistMono.className}`}>
+      <body className={inter.className}>
         <GrantoLayout>
           {children}
         </GrantoLayout>
