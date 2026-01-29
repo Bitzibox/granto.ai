@@ -56,12 +56,36 @@ const searchAids = async (params = {}) => {
     }
 
     const apiParams = {
-      text: params.text || '',
       page: params.page || 1,
-      page_size: params.pageSize || 50
+      page_size: params.pageSize || 200 // Augmenté pour avoir plus de résultats
     };
 
-    console.log('🔍 Recherche avec Bearer token');
+    // Ajouter la recherche textuelle si présente
+    if (params.text) {
+      apiParams.text = params.text;
+    }
+
+    // Filtrer par type d'aide si spécifié
+    if (params.aid_types && params.aid_types !== 'all') {
+      apiParams.aid_types = params.aid_types;
+    }
+
+    // Filtrer par audience cible (communes, EPCI, etc.)
+    if (params.targeted_audiences) {
+      apiParams.targeted_audiences = params.targeted_audiences;
+    }
+
+    // Filtrer par catégorie thématique
+    if (params.categories && params.categories !== 'all') {
+      apiParams.categories = params.categories;
+    }
+
+    // Filtrer par périmètre géographique (code INSEE ou nom)
+    if (params.perimeter) {
+      apiParams.perimeter = params.perimeter;
+    }
+
+    console.log('🔍 Recherche avec Bearer token, params:', apiParams);
 
     const response = await axios.get(`${API_BASE_URL}/aids/`, {
       params: apiParams,
@@ -78,7 +102,7 @@ const searchAids = async (params = {}) => {
       isAuthenticated = false;
       bearerToken = null;
       await authenticate();
-      
+
       // Réessayer la requête
       const response = await axios.get(`${API_BASE_URL}/aids/`, {
         params: apiParams,
@@ -88,7 +112,7 @@ const searchAids = async (params = {}) => {
       });
       return response.data;
     }
-    
+
     console.error('❌ Erreur recherche aides:', error.response?.status, error.message);
     throw error;
   }

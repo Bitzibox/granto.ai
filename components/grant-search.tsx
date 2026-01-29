@@ -294,8 +294,15 @@ export function GrantSearch() {
   }
 
   const handleViewOnAidesTerritoires = (dispositif: any) => {
+    // Utiliser external_url si disponible, sinon construire l'URL
     const baseUrl = 'https://aides-territoires.beta.gouv.fr'
-    const url = dispositif.url || `${baseUrl}/aides/${dispositif.slug}/`
+    let url = dispositif.external_url
+
+    if (!url || !url.startsWith('http')) {
+      // Construire l'URL à partir du slug
+      url = `${baseUrl}/aides/${dispositif.slug}/`
+    }
+
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 

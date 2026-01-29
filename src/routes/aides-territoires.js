@@ -35,9 +35,26 @@ router.get('/search', async (req, res) => {
     console.log(`${new Date().toISOString()} - GET /api/aides-territoires/search`);
     console.log('Paramètres reçus:', req.query);
 
-    const params = {
-      text: req.query.text || ''
-    };
+    // Construire les paramètres pour l'API
+    const params = {};
+
+    if (req.query.text) {
+      params.text = req.query.text;
+    }
+
+    if (req.query.aid_types && req.query.aid_types !== 'all') {
+      params.aid_types = req.query.aid_types;
+    }
+
+    if (req.query.categories && req.query.categories !== 'all') {
+      params.categories = req.query.categories;
+    }
+
+    // Par défaut, cibler les collectivités locales
+    params.targeted_audiences = req.query.targeted_audiences || 'commune';
+
+    // Augmenter le nombre de résultats
+    params.pageSize = 200;
 
     console.log('Paramètres envoyés à l API:', params);
 
@@ -47,64 +64,72 @@ router.get('/search', async (req, res) => {
 
     let filteredResults = data.results || [];
 
-    if (req.query.perimeter) {
-      const perimeterQuery = req.query.perimeter.toLowerCase().trim();
-      const includeRegional = req.query.includeRegional !== 'false';
-      
-      console.log(`🔍 Filtrage pour: "${perimeterQuery}" (regional: ${includeRegional})`);
+    // Filtrage géographique intelligent
+    const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
 
-      const targetRegion = DEPT_TO_REGION[perimeterQuery];
+    if (territoire) {
+      console.log(`🔍 Filtrage géographique pour: "${territoire}"`);
+
+      // Identifier la région cible
+      const targetRegion = DEPT_TO_REGION[territoire] || findRegionForCity(territoire);
 
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
-        const perimeterCode = (aid.perimeter_code || '').toLowerCase();
-        const region = (aid.region || '').toLowerCase();
+        const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
 
-        if (perimeter === 'france') {
+        // 1. TOUJOURS inclure les aides nationales
+        if (perimeter === 'france' || perimeterScale === 'france' || perimeterScale === 'pays') {
           return true;
         }
 
-        const exactMatch = 
-          perimeter.includes(perimeterQuery) || 
-          perimeterCode === perimeterQuery;
-        
-        if (exactMatch) {
-          return true;
-        }
-
-        const isOtherDepartment = PAYS_LOIRE_DEPTS.some(dept => {
-          if (dept === perimeterQuery) return false;
-          return perimeter.includes(dept) || perimeterCode === dept;
-        });
-        
-        if (isOtherDepartment) {
-          return false;
-        }
-
-        if (includeRegional && targetRegion) {
-          const isRegionalAid = 
-            region.includes(targetRegion) || 
-            perimeter.includes(targetRegion);
-          
-          if (isRegionalAid) {
+        // 2. Inclure les aides de la région
+        if (targetRegion) {
+          const regionMatch = perimeter.includes(targetRegion);
+          if (regionMatch) {
             return true;
           }
+        }
+
+        // 3. Inclure les aides du département (Sarthe = 72)
+        const isSarthe = territoire.includes('mans') ||
+                        territoire.includes('saint-mars') ||
+                        territoire.includes('sarthe') ||
+                        territoire === '72';
+
+        if (isSarthe) {
+          const deptMatch = perimeter.includes('sarthe') || perimeter.includes('72');
+          if (deptMatch) {
+            return true;
+          }
+        }
+
+        // 4. Inclure les aides mentionnant spécifiquement la ville
+        if (perimeter.includes(territoire)) {
+          return true;
+        }
+
+        // 5. Exclure les aides d'autres régions/départements spécifiques
+        // mais garder les aides intercommunales ou locales génériques
+        if (perimeterScale === 'epci' || perimeterScale === 'commune') {
+          // Vérifier si c'est pour la bonne zone
+          return perimeter.includes(territoire) ||
+                 perimeter.includes('sarthe') ||
+                 perimeter.includes('pays de la loire');
         }
 
         return false;
       });
 
-      console.log(`✅ ${filteredResults.length} résultats après filtrage`);
-      
-      const uniquePerimeters = [...new Set(filteredResults.map(a => a.perimeter))];
-      console.log(`📍 Périmètres finaux: ${uniquePerimeters.join(', ')}`);
+      console.log(`✅ ${filteredResults.length} résultats après filtrage géographique`);
     }
 
-    // Nettoyer le HTML des descriptions
+    // Nettoyer le HTML des descriptions et construire l'URL externe
     const cleanedResults = filteredResults.map(aid => ({
       ...aid,
       description: aid.description ? striptags(aid.description).trim() : '',
-      eligibility: aid.eligibility ? striptags(aid.eligibility).trim() : ''
+      eligibility: aid.eligibility ? striptags(aid.eligibility).trim() : '',
+      // Construire l'URL externe correcte
+      external_url: `https://aides-territoires.beta.gouv.fr/aides/${aid.slug}/`
     }));
 
     res.json({
@@ -118,6 +143,26 @@ router.get('/search', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Fonction pour trouver la région d'une ville
+function findRegionForCity(city) {
+  const cityLower = city.toLowerCase();
+
+  // Villes de Sarthe / Pays de la Loire
+  const paysLoireVilles = [
+    'le mans', 'mans', 'saint-mars-la-brière', 'saint mars', 'la flèche',
+    'sablé', 'mamers', 'allonnes', 'coulaines', 'nantes', 'angers',
+    'laval', 'la roche-sur-yon', 'saint-nazaire', 'cholet'
+  ];
+
+  for (const ville of paysLoireVilles) {
+    if (cityLower.includes(ville)) {
+      return 'pays de la loire';
+    }
+  }
+
+  return null;
+}
 
 router.get('/aid/:id', async (req, res) => {
   try {
