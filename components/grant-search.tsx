@@ -244,10 +244,11 @@ export function GrantSearch() {
       const data = await response.json()
       let allResults = data.results || []
 
-      // 2. Si un territoire est spécifié, récupérer aussi les aides nationales
+      // 2. Si un territoire est spécifié, récupérer aussi les aides nationales (France uniquement)
       if (territoire) {
         const nationalParams = new URLSearchParams()
-        nationalParams.append('perimeter_scale', 'France')
+        // Chercher spécifiquement les aides à échelle nationale
+        nationalParams.append('perimeter', 'france')
         if (motsCles) nationalParams.append('text', motsCles)
         if (typeAide) nationalParams.append('aid_types', typeAide)
         if (categorie) nationalParams.append('categories', categorie)
@@ -260,9 +261,16 @@ export function GrantSearch() {
             const nationalData = await nationalResponse.json()
             const nationalResults = nationalData.results || []
 
+            // Filtrer pour ne garder QUE les aides nationales (échelle France/Pays)
+            // et éviter les aides d'autres régions/départements
+            const nationalAidsOnly = nationalResults.filter((aid: any) => {
+              const scale = aid.perimeter_scale
+              return scale === 'France' || scale === 'Pays' || scale === 'france' || scale === 'pays'
+            })
+
             // Fusionner en évitant les doublons (par id)
             const existingIds = new Set(allResults.map((aid: any) => aid.id))
-            const newNationalResults = nationalResults.filter(
+            const newNationalResults = nationalAidsOnly.filter(
               (aid: any) => !existingIds.has(aid.id)
             )
             allResults = [...allResults, ...newNationalResults]
