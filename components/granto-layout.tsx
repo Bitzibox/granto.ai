@@ -28,16 +28,16 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background bg-mesh-gradient">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white">
-        <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-            <span className="text-xl font-bold">G</span>
+      <aside className="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-sidebar-border shadow-elegant backdrop-blur-xl">
+        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow-primary">
+            <span className="text-xl font-bold text-primary-foreground">G</span>
           </div>
           <div>
-            <div className="text-lg font-bold">Granto</div>
-            <div className="text-xs text-slate-400">Assistant subventions</div>
+            <div className="text-lg font-bold text-sidebar-foreground">Granto</div>
+            <div className="text-xs text-muted-foreground">Assistant subventions</div>
           </div>
         </div>
 
@@ -49,10 +49,10 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300',
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-gradient-primary text-primary-foreground shadow-md shadow-primary/20 scale-[1.02]'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-[1.02] hover:shadow-sm'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -62,8 +62,8 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-slate-800 p-4">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
+        <div className="border-t border-sidebar-border p-4">
+          <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300 hover:scale-[1.02]">
             <Settings className="h-5 w-5" />
             Paramètres
           </button>
@@ -73,26 +73,26 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-8">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border glass px-8 shadow-sm">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-slate-900">
+            <h1 className="text-xl font-semibold text-foreground">
               {navigation.find((item) => item.href === pathname)?.name || 'Granto'}
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="rounded-full p-2 hover:bg-slate-100">
-              <Bell className="h-5 w-5 text-slate-600" />
+          <div className="flex items-center gap-3">
+            <button className="rounded-full p-2 hover:bg-accent transition-all duration-300 hover:scale-110">
+              <Bell className="h-5 w-5 text-muted-foreground" />
             </button>
-            <button className="flex items-center gap-2 rounded-full bg-slate-100 py-2 px-3 hover:bg-slate-200">
-              <User className="h-5 w-5 text-slate-600" />
-              <span className="text-sm font-medium text-slate-700">Utilisateur</span>
+            <button className="flex items-center gap-2 rounded-full bg-secondary/50 backdrop-blur-sm py-2 px-4 hover:bg-secondary transition-all duration-300 hover:shadow-md hover:scale-[1.02] border border-border/50">
+              <User className="h-5 w-5 text-secondary-foreground" />
+              <span className="text-sm font-medium text-secondary-foreground">Utilisateur</span>
             </button>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+        <main className="min-h-[calc(100vh-4rem)] p-8">{children}</main>
       </div>
     </div>
   )

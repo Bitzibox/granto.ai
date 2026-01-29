@@ -69,20 +69,21 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Tableau de bord</h1>
-          <p className="text-slate-600">Vue d'ensemble de vos projets et subventions</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2 text-gradient-primary">Tableau de bord</h1>
+          <p className="text-muted-foreground text-lg">Vue d'ensemble de vos projets et subventions</p>
         </div>
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+        <Button
+          size="lg"
+          className="gap-2 shadow-glow-primary"
           onClick={() => router.push('/projet/nouveau')}
         >
           <Plus className="h-5 w-5" />
@@ -92,69 +93,69 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="border-gradient">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600 mb-1">Projets actifs</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.projetsActifs}</p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-sm text-muted-foreground mb-1">Projets actifs</p>
+                <p className="text-3xl font-bold text-foreground">{stats.projetsActifs}</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   {stats.totalProjets} projets au total
                 </p>
               </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <FolderKanban className="h-6 w-6 text-blue-600" />
+              <div className="bg-gradient-primary p-3 rounded-xl shadow-glow-primary">
+                <FolderKanban className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gradient">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600 mb-1">Montant total</p>
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-sm text-muted-foreground mb-1">Montant total</p>
+                <p className="text-3xl font-bold text-foreground">
                   {Math.round(stats.montantTotal / 1000)}k€
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Coût estimé des projets</p>
+                <p className="text-xs text-muted-foreground mt-1">Coût estimé des projets</p>
               </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Euro className="h-6 w-6 text-green-600" />
+              <div className="bg-gradient-accent p-3 rounded-xl shadow-glow-accent">
+                <Euro className="h-6 w-6 text-accent-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gradient">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600 mb-1">Subventions demandées</p>
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-sm text-muted-foreground mb-1">Subventions demandées</p>
+                <p className="text-3xl font-bold text-foreground">
                   {Math.round(stats.subventionsDemandees / 1000)}k€
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {stats.dossiersDeposes} dossiers déposés
                 </p>
               </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
+              <div className="bg-gradient-primary p-3 rounded-xl shadow-glow-primary">
+                <TrendingUp className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gradient">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600 mb-1">Actions requises</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.actionsRequises}</p>
-                <p className="text-xs text-slate-500 mt-1">0 urgentes cette semaine</p>
+                <p className="text-sm text-muted-foreground mb-1">Actions requises</p>
+                <p className="text-3xl font-bold text-foreground">{stats.actionsRequises}</p>
+                <p className="text-xs text-muted-foreground mt-1">0 urgentes cette semaine</p>
               </div>
-              <div className="bg-orange-100 p-3 rounded-lg">
-                <Clock className="h-6 w-6 text-orange-600" />
+              <div className="bg-gradient-accent p-3 rounded-xl shadow-glow-accent">
+                <Clock className="h-6 w-6 text-accent-foreground" />
               </div>
             </div>
           </CardContent>
@@ -163,24 +164,24 @@ export default function DashboardPage() {
 
       {/* Projets récents */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Projets récents</h2>
-          <Button 
-            variant="ghost" 
-            className="text-blue-600 hover:text-blue-700"
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-foreground">Projets récents</h2>
+          <Button
+            variant="ghost"
+            className="gap-1"
             onClick={() => router.push('/projets')}
           >
             Voir tout
-            <ArrowRight className="h-4 w-4 ml-1" />
+            <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
 
         {projetsRecents.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center text-slate-500">
-              <FolderKanban className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-              <p className="mb-4">Aucun projet. Créez votre premier projet.</p>
-              <Button onClick={() => router.push('/projet/nouveau')}>
+          <Card className="bg-gradient-card">
+            <CardContent className="p-12 text-center">
+              <FolderKanban className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <p className="mb-4 text-muted-foreground">Aucun projet. Créez votre premier projet.</p>
+              <Button size="lg" onClick={() => router.push('/projet/nouveau')}>
                 Créer un projet
               </Button>
             </CardContent>
@@ -188,16 +189,16 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projetsRecents.map((projet) => (
-              <Card key={projet.id} className="hover:shadow-lg transition-shadow cursor-pointer"
+              <Card key={projet.id} className="cursor-pointer group"
                     onClick={() => router.push(`/projet/${projet.id}`)}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{projet.titre}</CardTitle>
+                    <CardTitle className="text-lg group-hover:text-primary transition-colors">{projet.titre}</CardTitle>
                     <Badge variant="secondary">{projet.statut}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-600 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     {projet.collectivite?.nom}
                   </p>
                   {projet.typeProjet && (
@@ -206,12 +207,12 @@ export default function DashboardPage() {
                     </Badge>
                   )}
                   {projet.montantTtc && (
-                    <p className="text-sm font-medium text-slate-700 mt-2">
+                    <p className="text-sm font-medium text-foreground mt-2">
                       {parseFloat(projet.montantTtc).toLocaleString()}€
                     </p>
                   )}
                   {projet._count?.dossiers > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-green-600 mt-2">
+                    <div className="flex items-center gap-1 text-sm text-primary mt-2">
                       <CheckCircle2 className="h-4 w-4" />
                       <span>{projet._count.dossiers} subvention(s)</span>
                     </div>
@@ -224,7 +225,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Section À faire */}
-      <Card>
+      <Card className="bg-gradient-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -232,10 +233,10 @@ export default function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-slate-500">
-            <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-300" />
-            <p className="text-lg font-medium text-green-600 mb-1">Tout est à jour !</p>
-            <p className="text-sm">Aucune action urgente à traiter</p>
+          <div className="text-center py-8">
+            <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-primary opacity-50" />
+            <p className="text-lg font-medium text-primary mb-1">Tout est à jour !</p>
+            <p className="text-sm text-muted-foreground">Aucune action urgente à traiter</p>
           </div>
         </CardContent>
       </Card>
