@@ -50,28 +50,30 @@ router.get('/search', async (req, res) => {
       params.categories = req.query.categories;
     }
 
-    // Par défaut, cibler les collectivités locales
-    params.targeted_audiences = req.query.targeted_audiences || 'commune';
+    // TOUJOURS cibler les communes (ne pas utiliser la ville comme targeted_audiences)
+    params.targeted_audiences = 'commune';
 
     // Augmenter le nombre de résultats
     params.pageSize = 200;
 
-    console.log('Paramètres envoyés à l API:', params);
+    console.log('Paramètres envoyés à l\'API:', params);
 
     const data = await searchAids(params);
 
-    console.log(`✅ ${data.count} résultats bruts de l API`);
+    console.log(`✅ ${data.count} résultats bruts de l'API`);
 
     let filteredResults = data.results || [];
 
-    // Filtrage géographique intelligent
+    // Récupérer le territoire saisi par l'utilisateur
     const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
 
-    if (territoire) {
+    // Si un territoire est spécifié ET ce n'est pas "commune", filtrer géographiquement
+    if (territoire && territoire !== 'commune') {
       console.log(`🔍 Filtrage géographique pour: "${territoire}"`);
 
       // Identifier la région cible
       const targetRegion = DEPT_TO_REGION[territoire] || findRegionForCity(territoire);
+      console.log(`📍 Région identifiée: ${targetRegion || 'aucune'}`);
 
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
@@ -82,45 +84,40 @@ router.get('/search', async (req, res) => {
           return true;
         }
 
-        // 2. Inclure les aides de la région
-        if (targetRegion) {
-          const regionMatch = perimeter.includes(targetRegion);
-          if (regionMatch) {
-            return true;
-          }
-        }
-
-        // 3. Inclure les aides du département (Sarthe = 72)
-        const isSarthe = territoire.includes('mans') ||
-                        territoire.includes('saint-mars') ||
-                        territoire.includes('sarthe') ||
-                        territoire === '72';
-
-        if (isSarthe) {
-          const deptMatch = perimeter.includes('sarthe') || perimeter.includes('72');
-          if (deptMatch) {
-            return true;
-          }
-        }
-
-        // 4. Inclure les aides mentionnant spécifiquement la ville
-        if (perimeter.includes(territoire)) {
+        // 2. Inclure les aides régionales si on a identifié une région
+        if (targetRegion && perimeter.includes(targetRegion)) {
           return true;
         }
 
-        // 5. Exclure les aides d'autres régions/départements spécifiques
-        // mais garder les aides intercommunales ou locales génériques
-        if (perimeterScale === 'epci' || perimeterScale === 'commune') {
-          // Vérifier si c'est pour la bonne zone
-          return perimeter.includes(territoire) ||
-                 perimeter.includes('sarthe') ||
-                 perimeter.includes('pays de la loire');
+        // 3. Inclure les aides du département pour les villes de Sarthe
+        const isSarthe = territoire.includes('mans') ||
+                        territoire.includes('saint-mars') ||
+                        territoire.includes('saint mars') ||
+                        territoire.includes('sarthe') ||
+                        territoire === '72';
+
+        if (isSarthe && (perimeter.includes('sarthe') || perimeter.includes('72'))) {
+          return true;
         }
 
+        // 4. Inclure les aides mentionnant spécifiquement la ville ou le territoire
+        if (territoire.length > 2 && perimeter.includes(territoire)) {
+          return true;
+        }
+
+        // 5. Inclure les aides sans périmètre spécifique (génériques)
+        if (!perimeter || perimeter === '') {
+          return true;
+        }
+
+        // 6. Exclure les aides d'autres régions spécifiques
         return false;
       });
 
       console.log(`✅ ${filteredResults.length} résultats après filtrage géographique`);
+    } else {
+      // Pas de territoire spécifié = retourner tous les résultats
+      console.log('📍 Pas de filtrage géographique, retour de tous les résultats');
     }
 
     // Nettoyer le HTML des descriptions et construire l'URL externe

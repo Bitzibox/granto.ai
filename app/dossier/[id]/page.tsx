@@ -28,7 +28,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { dossiersAPI } from '@/lib/api'
+// API functions inline pour éviter les problèmes de bundling
+const fetchDossier = async (id: string) => {
+  const response = await fetch(`/api/dossiers/${id}`)
+  if (!response.ok) throw new Error('Dossier non trouvé')
+  return response.json()
+}
+
+const updateDossier = async (id: string, data: any) => {
+  const response = await fetch(`/api/dossiers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!response.ok) throw new Error('Erreur lors de la mise à jour')
+  return response.json()
+}
 
 const statutOptions = [
   { value: 'brouillon', label: 'Brouillon', color: 'bg-slate-500' },
@@ -69,7 +84,7 @@ export default function DossierDetailPage() {
   const loadDossier = async () => {
     try {
       setLoading(true)
-      const data = await dossiersAPI.getById(dossierId)
+      const data = await fetchDossier(dossierId)
       setDossier(data)
 
       // Initialize form fields
@@ -94,7 +109,7 @@ export default function DossierDetailPage() {
       setSaving(true)
       setError(null)
 
-      await dossiersAPI.update(dossierId, {
+      await updateDossier(dossierId, {
         statut,
         montantDemande: montantDemande ? parseFloat(montantDemande) : null,
         montantAccorde: montantAccorde ? parseFloat(montantAccorde) : null,
