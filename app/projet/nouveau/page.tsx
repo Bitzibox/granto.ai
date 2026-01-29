@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save, Loader2, FolderPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,27 +16,21 @@ import {
 } from '@/components/ui/select'
 
 // Fonctions API inline pour éviter les problèmes de bundling
-const fetchProjet = async (id: string) => {
-  const response = await fetch(`/api/projets/${id}`)
-  if (!response.ok) throw new Error('Projet non trouvé')
-  return response.json()
-}
-
 const fetchCollectivites = async () => {
   const response = await fetch('/api/collectivites')
   if (!response.ok) throw new Error('Erreur chargement collectivités')
   return response.json()
 }
 
-const updateProjet = async (id: string, data: any) => {
-  const response = await fetch(`/api/projets/${id}`, {
-    method: 'PUT',
+const createProjet = async (data: any) => {
+  const response = await fetch('/api/projets', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   })
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.error || 'Erreur mise à jour')
+    throw new Error(error.error || 'Erreur création projet')
   }
   return response.json()
 }
@@ -53,11 +47,8 @@ const TYPES_PROJET = [
   { value: 'autre', label: 'Autre' },
 ]
 
-export default function EditProjetPage() {
+export default function NouveauProjetPage() {
   const router = useRouter()
-  const params = useParams()
-  const projetId = params.id as string
-
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,34 +67,20 @@ export default function EditProjetPage() {
   })
 
   useEffect(() => {
-    if (projetId) {
-      loadData()
-    }
-  }, [projetId])
+    loadCollectivites()
+  }, [])
 
-  const loadData = async () => {
+  const loadCollectivites = async () => {
     try {
-      const [projet, collsData] = await Promise.all([
-        fetchProjet(projetId),
-        fetchCollectivites()
-      ])
-
-      setFormData({
-        titre: projet.titre || '',
-        collectiviteId: projet.collectiviteId || '',
-        typeProjet: projet.typeProjet || '',
-        description: projet.description || '',
-        montantHt: projet.montantHt || '',
-        montantTtc: projet.montantTtc || '',
-        dateDebut: projet.dateDebut ? projet.dateDebut.split('T')[0] : '',
-        dateFin: projet.dateFin ? projet.dateFin.split('T')[0] : '',
-        statut: projet.statut || 'brouillon',
-      })
-
-      setCollectivites(collsData)
+      const data = await fetchCollectivites()
+      setCollectivites(data)
+      // Sélectionner automatiquement la première collectivité
+      if (data.length > 0) {
+        setFormData(prev => ({ ...prev, collectiviteId: data[0].id }))
+      }
     } catch (err) {
-      console.error('Erreur chargement projet:', err)
-      setError('Impossible de charger le projet')
+      console.error('Erreur:', err)
+      setError('Impossible de charger les collectivités')
     } finally {
       setLoading(false)
     }
@@ -112,7 +89,7 @@ export default function EditProjetPage() {
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
 
-    // Auto-calculer TTC
+    // Auto-calculer TTC (TVA 20%)
     if (field === 'montantHt' && value) {
       const ht = parseFloat(value)
       if (!isNaN(ht)) {
@@ -126,6 +103,11 @@ export default function EditProjetPage() {
 
     if (!formData.titre.trim()) {
       setError('Le titre est obligatoire')
+      return
+    }
+
+    if (!formData.collectiviteId) {
+      setError('Veuillez sélectionner une collectivité')
       return
     }
 
@@ -145,11 +127,11 @@ export default function EditProjetPage() {
         statut: formData.statut,
       }
 
-      await updateProjet(projetId, dataToSend)
-      router.push(`/projet/${projetId}`)
+      const projet = await createProjet(dataToSend)
+      router.push(`/projet/${projet.id}`)
     } catch (err) {
-      console.error('Erreur sauvegarde:', err)
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde')
+      console.error('Erreur:', err)
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création')
     } finally {
       setSaving(false)
     }
@@ -167,19 +149,20 @@ export default function EditProjetPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Button
         variant="ghost"
-        onClick={() => router.push(`/projet/${projetId}`)}
+        onClick={() => router.push('/projets')}
         className="mb-6"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Annuler
+        Retour aux projets
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Modifier le projet
+        <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+          <FolderPlus className="h-8 w-8 text-blue-600" />
+          Nouveau projet
         </h1>
         <p className="text-slate-600">
-          Modifiez les informations de votre projet
+          Créez un nouveau projet pour votre collectivité
         </p>
       </div>
 
@@ -196,7 +179,7 @@ export default function EditProjetPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Informations générales</CardTitle>
-                <CardDescription>Informations principales du projet</CardDescription>
+                <CardDescription>Décrivez votre projet</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -206,6 +189,7 @@ export default function EditProjetPage() {
                   <Input
                     value={formData.titre}
                     onChange={(e) => handleChange('titre', e.target.value)}
+                    placeholder="Ex: Rénovation de la salle des fêtes"
                     required
                   />
                 </div>
@@ -219,7 +203,7 @@ export default function EditProjetPage() {
                     onValueChange={(val) => handleChange('collectiviteId', val)}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Sélectionner une collectivité" />
                     </SelectTrigger>
                     <SelectContent>
                       {collectivites.map(coll => (
@@ -259,6 +243,7 @@ export default function EditProjetPage() {
                   <Textarea
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
+                    placeholder="Décrivez votre projet en quelques lignes..."
                     className="min-h-[120px]"
                   />
                 </div>
@@ -267,8 +252,8 @@ export default function EditProjetPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Budget</CardTitle>
-                <CardDescription>Montants prévisionnels</CardDescription>
+                <CardTitle>Budget prévisionnel</CardTitle>
+                <CardDescription>Estimation du coût du projet</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -280,6 +265,7 @@ export default function EditProjetPage() {
                       type="number"
                       value={formData.montantHt}
                       onChange={(e) => handleChange('montantHt', e.target.value)}
+                      placeholder="0"
                     />
                   </div>
                   <div>
@@ -290,8 +276,10 @@ export default function EditProjetPage() {
                       type="number"
                       value={formData.montantTtc}
                       onChange={(e) => handleChange('montantTtc', e.target.value)}
+                      placeholder="Calculé automatiquement"
                       className="bg-slate-50"
                     />
+                    <p className="text-xs text-slate-500 mt-1">TVA 20% appliquée automatiquement</p>
                   </div>
                 </div>
               </CardContent>
@@ -302,7 +290,7 @@ export default function EditProjetPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Statut et calendrier</CardTitle>
+                <CardTitle>Calendrier</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -326,7 +314,7 @@ export default function EditProjetPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Date de début
+                    Date de début prévue
                   </label>
                   <Input
                     type="date"
@@ -337,7 +325,7 @@ export default function EditProjetPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Date de fin
+                    Date de fin prévue
                   </label>
                   <Input
                     type="date"
@@ -356,15 +344,19 @@ export default function EditProjetPage() {
               {saving ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Enregistrement...
+                  Création en cours...
                 </>
               ) : (
                 <>
                   <Save className="h-5 w-5 mr-2" />
-                  Enregistrer
+                  Créer le projet
                 </>
               )}
             </Button>
+
+            <p className="text-xs text-slate-500 text-center">
+              Vous pourrez modifier ces informations à tout moment
+            </p>
           </div>
         </div>
       </form>
