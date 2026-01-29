@@ -11,14 +11,12 @@ import {
   Filter,
   ExternalLink,
   Plus,
-  ChevronDown,
-  Loader2
+  TrendingUp
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Slider } from '@/components/ui/slider'
 import {
   Dialog,
   DialogContent,
@@ -26,22 +24,95 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const API_BASE_URL = typeof window !== 'undefined' 
-  ? `http://${window.location.hostname}:3001`
-  : 'http://localhost:3001'
-
 export function GrantSearch() {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [territoireSearch, setTerritoireSearch] = useState('')
+  const [territoire, setTerritoire] = useState('')
+  const [motsCles, setMotsCles] = useState('')
+  const [typeAide, setTypeAide] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
-  const [selectedDispositif, setSelectedDispositif] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedDispositif, setSelectedDispositif] = useState<any>(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
-  const [projects, setProjects] = useState([])
+  const [projects, setProjects] = useState<any[]>([])
   const [loadingProjects, setLoadingProjects] = useState(false)
-  const [searched, setSearched] = useState(false)
 
+  // Fonction pour obtenir le badge territorial
+  const getTerritorialBadge = (scale: string) => {
+    const badges = {
+      'Pays': { label: '🇫🇷 National', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+      'France': { label: '🇫🇷 National', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+      'Région': { label: '🏛️ Régional', color: 'bg-green-100 text-green-800 border-green-200' },
+      'Département': { label: '🏢 Départemental', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+      'Commune': { label: '🏘️ Local', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+      'EPCI': { label: '🏘️ Intercommunal', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+    }
+    return badges[scale] || { label: scale, color: 'bg-gray-100 text-gray-800 border-gray-200' }
+  }
+
+  // Fonction pour calculer le score de compatibilité
+  const calculateCompatibilityScore = (aid: any, searchTerritoire: string, searchMotsCles: string) => {
+    let score = 0
+    let details = []
+
+    // 1. Correspondance du territoire (40 points)
+    if (aid.perimeter && searchTerritoire) {
+      const perimeterLower = aid.perimeter.toLowerCase()
+      const territoireLower = searchTerritoire.toLowerCase()
+      
+      if (perimeterLower.includes(territoireLower) || territoireLower.includes(perimeterLower)) {
+        score += 40
+        details.push('Territoire correspond')
+      } else if (aid.perimeter_scale === 'Région' || aid.perimeter_scale === 'France') {
+        score += 20
+        details.push('Territoire couvert')
+      }
+    } else if (aid.perimeter_scale === 'France') {
+      score += 30
+      details.push('National (tout territoire)')
+    }
+
+    // 2. Correspondance des mots-clés (40 points)
+    if (searchMotsCles) {
+      const keywords = searchMotsCles.toLowerCase().split(' ')
+      const description = (aid.description || '').toLowerCase()
+      const name = (aid.name || '').toLowerCase()
+      
+      let keywordMatches = 0
+      keywords.forEach(keyword => {
+        if (keyword.length > 2) {
+          if (name.includes(keyword)) {
+            keywordMatches += 2
+          } else if (description.includes(keyword)) {
+            keywordMatches += 1
+          }
+        }
+      })
+      
+      const keywordScore = Math.min(40, keywordMatches * 10)
+      score += keywordScore
+      if (keywordScore > 20) {
+        details.push('Mots-clés correspondent')
+      } else if (keywordScore > 0) {
+        details.push('Mots-clés partiels')
+      }
+    }
+
+    // 3. Disponibilité et statut (20 points)
+    if (aid.is_live) {
+      score += 10
+      details.push('Aide active')
+    }
+    
+    if (!aid.submission_deadline || new Date(aid.submission_deadline) > new Date()) {
+      score += 10
+      details.push('Candidature ouverte')
+    }
+
+    return { score: Math.min(100, Math.round(score)), details }
+  }
+
+  // Charger les projets quand la modale s'ouvre
   useEffect(() => {
     if (showProjectModal && selectedDispositif) {
       loadProjects()
@@ -51,7 +122,7 @@ export function GrantSearch() {
   const loadProjects = async () => {
     setLoadingProjects(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/projets`)
+      const response = await fetch('/api/projets')
       if (response.ok) {
         const data = await response.json()
         setProjects(data)
@@ -63,26 +134,19 @@ export function GrantSearch() {
     }
   }
 
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault()
-    
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setLoading(true)
-    setSearched(true)
+    setError(null)
 
     try {
       const params = new URLSearchParams()
-      
-      // Utiliser "perimeter" au lieu de "targeted_audiences" pour le territoire
-      if (territoireSearch) {
-        params.append('perimeter', territoireSearch)
-      }
-      
-      if (searchTerm) {
-        params.append('text', searchTerm)
-      }
+      if (territoire) params.append('targeted_audiences', territoire)
+      if (motsCles) params.append('text', motsCles)
+      if (typeAide) params.append('aid_types', typeAide)
 
       const response = await fetch(
-        `${API_BASE_URL}/api/aides-territoires/search?${params.toString()}`
+        `/api/aides-territoires/search?${params.toString()}`
       )
 
       if (!response.ok) {
@@ -90,18 +154,29 @@ export function GrantSearch() {
       }
 
       const data = await response.json()
-      setResults(data.results || [])
+      
+      // Calculer les scores de compatibilité et trier
+      const resultsWithScores = (data.results || []).map(aid => ({
+        ...aid,
+        compatibility: calculateCompatibilityScore(aid, territoire, motsCles)
+      }))
+      
+      // Trier par score décroissant
+      resultsWithScores.sort((a, b) => b.compatibility.score - a.compatibility.score)
+      
+      setResults(resultsWithScores)
     } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue')
       console.error('Erreur:', err)
-      setResults([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAddToProject = async (projectId) => {
+  const handleAddToProject = async (projectId: string) => {
+    if (!selectedDispositif) return
     try {
-      const response = await fetch(`${API_BASE_URL}/api/dossiers`, {
+      const response = await fetch('/api/dossiers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,14 +203,17 @@ export function GrantSearch() {
     }
   }
 
-  const handleViewOnAidesTerritoires = (dispositif) => {
-    if (dispositif.url) {
-      window.open(dispositif.url, '_blank')
-    } else {
-      const baseUrl = 'https://aides-territoires.beta.gouv.fr/aides'
-      const searchUrl = `${baseUrl}/?text=${encodeURIComponent(dispositif.name)}`
-      window.open(searchUrl, '_blank')
-    }
+  const handleViewOnAidesTerritoires = (dispositif: any) => {
+    const baseUrl = 'https://aides-territoires.beta.gouv.fr'
+    const url = dispositif.url || `${baseUrl}/aides/${dispositif.slug}/`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200'
+    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200'
+    if (score >= 40) return 'text-orange-600 bg-orange-50 border-orange-200'
+    return 'text-gray-600 bg-gray-50 border-gray-200'
   }
 
   return (
@@ -143,111 +221,110 @@ export function GrantSearch() {
       <div>
         <h1 className="text-3xl font-bold mb-2">Recherche de subventions</h1>
         <p className="text-slate-600">
-          Recherchez parmi plus de 3000 aides et subventions disponibles
+          Trouvez les aides et subventions adaptées à votre projet
         </p>
       </div>
 
-      {/* Barre de recherche */}
       <Card>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSearch}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Critères de recherche
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearch} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  <Search className="h-4 w-4 inline mr-2" />
-                  Mots-clés
-                </label>
-                <Input
-                  placeholder="Ex: panneaux solaires, voirie, sport..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium mb-2">
                   <MapPin className="h-4 w-4 inline mr-2" />
                   Territoire
                 </label>
                 <Input
-                  placeholder="Ex: Saint-Mars-la-Brière, Sarthe, 72300..."
-                  value={territoireSearch}
-                  onChange={(e) => setTerritoireSearch(e.target.value)}
+                  placeholder="Ex: Saint-Mars-la-Brière"
+                  value={territoire}
+                  onChange={(e) => setTerritoire(e.target.value)}
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  Nom de commune, département, code postal ou code INSEE
-                </p>
               </div>
-              <div className="flex items-end">
-                <Button 
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Recherche...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Rechercher
-                    </>
-                  )}
-                </Button>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <Filter className="h-4 w-4 inline mr-2" />
+                  Mots-clés
+                </label>
+                <Input
+                  placeholder="Ex: panneaux solaires, rénovation"
+                  value={motsCles}
+                  onChange={(e) => setMotsCles(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <Building2 className="h-4 w-4 inline mr-2" />
+                  Type d'aide
+                </label>
+                <Input
+                  placeholder="Ex: subvention, prêt"
+                  value={typeAide}
+                  onChange={(e) => setTypeAide(e.target.value)}
+                />
               </div>
             </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Recherche en cours...' : 'Rechercher'}
+            </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* Résultats */}
-      {searched && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              {results.length} dispositif{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}
-            </h2>
-          </div>
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <p className="text-red-600">❌ {error}</p>
+          </CardContent>
+        </Card>
+      )}
 
-          {loading ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Loader2 className="h-12 w-12 mx-auto mb-4 text-blue-600 animate-spin" />
-                <p className="text-slate-600">Recherche en cours sur Aides-Territoires...</p>
-              </CardContent>
-            </Card>
-          ) : results.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Search className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-600 mb-2">
-                  Aucun dispositif trouvé avec ces critères
-                </p>
-                <p className="text-sm text-slate-500">
-                  Essayez avec d'autres mots-clés ou un territoire différent
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            results.map((dispositif) => (
-              <Card
-                key={dispositif.id}
-                className="border border-slate-200 hover:shadow-lg transition-shadow"
-              >
+      {results.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">
+            {results.length} résultat{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}
+          </h2>
+
+          {results.map((dispositif: any) => {
+            const territorialBadge = getTerritorialBadge(dispositif.perimeter_scale)
+            const compatibility = dispositif.compatibility || { score: 0, details: [] }
+            
+            return (
+              <Card key={dispositif.id} className="border border-slate-200 hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border font-semibold text-sm ${getScoreColor(compatibility.score)}`}>
+                          <TrendingUp className="h-4 w-4" />
+                          {compatibility.score}% compatible
+                        </div>
+                        <Badge className={territorialBadge.color + ' border'}>
+                          {territorialBadge.label}
+                        </Badge>
+                      </div>
                       <CardTitle className="text-lg mb-2">
                         {dispositif.name}
                       </CardTitle>
                       <div className="flex flex-wrap gap-2 mb-2">
-                        {dispositif.aid_types?.map((type, idx) => (
-                          <Badge key={idx} variant="secondary">{type}</Badge>
-                        ))}
-                        {dispositif.recurrence && (
-                          <Badge variant="outline">{dispositif.recurrence}</Badge>
+                        {dispositif.perimeter && (
+                          <Badge variant="outline" className="text-xs">
+                            📍 {dispositif.perimeter}
+                          </Badge>
                         )}
+                        {dispositif.aid_types_full?.map((type: any, idx: number) => (
+                          <Badge key={idx} variant="secondary">
+                            {type.name}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -263,7 +340,7 @@ export function GrantSearch() {
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-slate-500" />
                         <span className="text-slate-600">
-                          {dispositif.financers[0].name}
+                          {dispositif.financers[0]}
                         </span>
                       </div>
                     )}
@@ -276,16 +353,17 @@ export function GrantSearch() {
                         </span>
                       </div>
                     )}
-
-                    {dispositif.perimeter && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-slate-500" />
-                        <span className="text-slate-600">
-                          {dispositif.perimeter}
-                        </span>
-                      </div>
-                    )}
                   </div>
+
+                  {compatibility.details.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {compatibility.details.map((detail, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          ✓ {detail}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -308,31 +386,16 @@ export function GrantSearch() {
                       }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Ajouter
+                      Ajouter à mes projets
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          )}
+            )
+          })}
         </div>
       )}
 
-      {!searched && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Search className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-            <p className="text-slate-600 mb-2">
-              Recherchez parmi plus de 3000 aides disponibles
-            </p>
-            <p className="text-sm text-slate-500">
-              Utilisez les champs ci-dessus pour trouver les subventions adaptées à votre projet
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Modale d'ajout à un projet */}
       <Dialog open={showProjectModal} onOpenChange={setShowProjectModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -346,10 +409,7 @@ export function GrantSearch() {
               <p className="text-slate-600 mb-4">
                 Vous n'avez pas encore de projet
               </p>
-              <Button onClick={() => {
-                setShowProjectModal(false)
-                router.push('/projets')
-              }}>
+              <Button onClick={() => router.push('/projets')}>
                 Créer un projet
               </Button>
             </div>

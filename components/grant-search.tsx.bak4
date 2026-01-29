@@ -183,7 +183,7 @@ export function GrantSearch() {
         },
         body: JSON.stringify({
           projet_id: projectId,
-          dispositif_id: selectedDispositif.id,
+          dispositif_id: selectedDispositif.slug || selectedDispositif.id,
           nom: `Dossier ${selectedDispositif.name}`,
           statut: 'brouillon',
           dispositif_data: selectedDispositif
@@ -204,9 +204,25 @@ export function GrantSearch() {
   }
 
   const handleViewOnAidesTerritoires = (dispositif: any) => {
+    // L'API retourne une URL relative dans le champ "url", il faut ajouter le domaine
     const baseUrl = 'https://aides-territoires.beta.gouv.fr'
-    const url = dispositif.url || `${baseUrl}/aides/${dispositif.slug}/`
-    window.open(url, '_blank', 'noopener,noreferrer')
+    let fullUrl = dispositif.url
+    
+    // Si l'URL est relative, ajouter le domaine
+    if (fullUrl && !fullUrl.startsWith('http')) {
+      fullUrl = baseUrl + fullUrl
+    } else if (!fullUrl && dispositif.slug) {
+      // Fallback: construire l'URL à partir du slug
+      fullUrl = `${baseUrl}/aides/${dispositif.slug}/`
+    }
+    
+    console.log('Opening URL:', fullUrl)
+    window.open(fullUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleViewDetails = (dispositif: any) => {
+    // Rediriger vers la page de détails avec le slug
+    router.push(`/aide/${dispositif.slug}`)
   }
 
   const getScoreColor = (score: number) => {
@@ -366,6 +382,16 @@ export function GrantSearch() {
                   )}
 
                   <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewDetails(dispositif)
+                      }}
+                    >
+                      Voir les détails
+                    </Button>
                     <Button
                       variant="outline"
                       className="flex-1"
