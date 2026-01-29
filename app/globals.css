@@ -147,6 +147,27 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Force text colors globally for visibility on dark background */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-foreground);
+  }
+
+  p, span, div, label {
+    color: inherit;
+  }
+
+  /* Override any hardcoded dark text colors */
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600 {
+    color: var(--color-foreground) !important;
+  }
 }
 
 @layer utilities {
@@ -165,6 +186,12 @@
 
   .bg-gradient-card {
     background: linear-gradient(145deg,
+      oklch(0.13 0.015 260) 0%,
+      oklch(0.15 0.02 270) 100%);
+  }
+
+  .light .bg-gradient-card {
+    background: linear-gradient(145deg,
       oklch(1 0 0) 0%,
       oklch(0.99 0.01 280) 100%);
   }
@@ -178,17 +205,17 @@
       radial-gradient(at 0% 100%, oklch(0.68 0.13 320 / 0.10) 0px, transparent 50%);
   }
 
-  /* Glassmorphism effect */
+  /* Glassmorphism effect - Dark by default */
   .glass {
-    background: oklch(1 0 0 / 0.7);
+    background: oklch(0.12 0.02 260 / 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid oklch(0.95 0.01 270 / 0.5);
+    border: 1px solid oklch(0.25 0.02 260 / 0.5);
   }
 
-  .dark .glass {
-    background: oklch(0.18 0.02 270 / 0.7);
-    border: 1px solid oklch(0.30 0.02 270 / 0.5);
+  .light .glass {
+    background: oklch(1 0 0 / 0.7);
+    border: 1px solid oklch(0.95 0.01 270 / 0.5);
   }
 
   /* Modern shadows */

@@ -14,6 +14,7 @@ import {
   User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
@@ -81,6 +82,7 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button className="rounded-full p-2 hover:bg-accent transition-all duration-300 hover:scale-110">
               <Bell className="h-5 w-5 text-muted-foreground" />
             </button>
