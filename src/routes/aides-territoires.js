@@ -62,7 +62,31 @@ router.get('/search', async (req, res) => {
 
     console.log(`✅ ${data.count} résultats bruts de l'API`);
 
+    // Log des types d'aide pour déboguer le filtrage
+    if (params.aid_types) {
+      console.log(`🔍 Filtre aid_types actif: "${params.aid_types}"`);
+      data.results?.slice(0, 3).forEach(aid => {
+        console.log(`  - ${aid.name}: types = ${JSON.stringify(aid.aid_types)}`);
+      });
+    }
+
     let filteredResults = data.results || [];
+
+    // Filtrer par type d'aide côté backend si spécifié (au cas où l'API ne filtre pas correctement)
+    const aidTypeFilter = req.query.aid_types;
+    if (aidTypeFilter && aidTypeFilter !== 'all') {
+      const initialCount = filteredResults.length;
+      filteredResults = filteredResults.filter(aid => {
+        // aid.aid_types est un tableau de types
+        const aidTypes = aid.aid_types || [];
+        const hasType = aidTypes.includes(aidTypeFilter);
+        if (!hasType && initialCount <= 5) {
+          console.log(`❌ Filtre: "${aid.name}" n'a pas le type "${aidTypeFilter}" (types: ${JSON.stringify(aidTypes)})`);
+        }
+        return hasType;
+      });
+      console.log(`🔍 Filtrage par type "${aidTypeFilter}": ${initialCount} → ${filteredResults.length} résultats`);
+    }
 
     // Récupérer le territoire saisi par l'utilisateur
     const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
