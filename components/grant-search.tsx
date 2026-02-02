@@ -34,18 +34,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-// Types d'aide disponibles
+// Types d'aide disponibles (valeurs conformes à l'API Aides-Territoires)
 const TYPES_AIDE = [
   { value: '', label: 'Tous les types' },
   { value: 'grant', label: 'Subvention' },
   { value: 'loan', label: 'Prêt' },
   { value: 'recoverable_advance', label: 'Avance récupérable' },
-  { value: 'tax_benefit', label: 'Avantage fiscal' },
-  { value: 'cee', label: 'CEE' },
+  { value: 'cee', label: 'Certificat d\'économie d\'énergie (CEE)' },
+  { value: 'other', label: 'Autre aide financière' },
   { value: 'technical_engineering', label: 'Ingénierie technique' },
   { value: 'financial_engineering', label: 'Ingénierie financière' },
   { value: 'legal_engineering', label: 'Ingénierie juridique' },
-  { value: 'other', label: 'Autre' },
 ]
 
 // Catégories thématiques
