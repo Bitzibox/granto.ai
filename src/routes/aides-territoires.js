@@ -172,10 +172,9 @@ router.get('/search', async (req, res) => {
     // Récupérer le territoire saisi par l'utilisateur
     const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
 
-    // TEMPORAIREMENT DÉSACTIVÉ : Filtrer par pertinence des mots-clés
-    // Pour débugger le problème du filtrage géographique
+    // Filtrer par pertinence des mots-clés si spécifiés
     const searchText = req.query.text;
-    if (false && searchText && searchText.trim()) {
+    if (searchText && searchText.trim()) {
       const initialCount = filteredResults.length;
       const keywords = searchText.toLowerCase().split(/\s+/).filter(k => k.length > 2);
 
@@ -200,12 +199,12 @@ router.get('/search', async (req, res) => {
 
       console.log(`✅ Filtrage par pertinence: ${initialCount} → ${filteredResults.length} résultats`);
     }
-    console.log(`⚠️ FILTRAGE PAR PERTINENCE DÉSACTIVÉ POUR DEBUG`);
-    console.log(`📊 Nombre de résultats avant filtrage géographique: ${filteredResults.length}`);
 
     // Si un territoire est spécifié ET qu'on n'a pas utilisé le paramètre perimeter de l'API,
     // faire un filtrage géographique côté backend
-    if (territoire && territoire !== 'commune' && !params.perimeter) {
+    if (params.perimeter) {
+      console.log(`✅ Filtrage géographique fait par l'API avec perimeter="${params.perimeter}"`);
+    } else if (territoire && territoire !== 'commune') {
       console.log(`🔍 Filtrage géographique côté backend pour: "${territoire}"`);
 
       // Identifier le département et la région cible
@@ -219,26 +218,6 @@ router.get('/search', async (req, res) => {
       const beforeGeoFilter = filteredResults.length;
       let excludedCount = 0;
       let nationalCount = 0;
-
-      // Compter les aides qui mentionnent la Sarthe ou les Pays de la Loire
-      const sartheAids = filteredResults.filter(a => (a.perimeter || '').toLowerCase().includes('sarthe'));
-      const paysAids = filteredResults.filter(a => (a.perimeter || '').toLowerCase().includes('pays'));
-      console.log(`📊 Aides contenant "sarthe": ${sartheAids.length}`);
-      console.log(`📊 Aides contenant "pays": ${paysAids.length}`);
-
-      // Log les 20 premiers périmètres pour débugger
-      console.log(`📊 Les 20 premiers périmètres des ${filteredResults.length} aides:`);
-      filteredResults.slice(0, 20).forEach((aid, idx) => {
-        console.log(`  [${idx+1}] "${aid.name}": scale="${aid.perimeter_scale}", perimeter="${aid.perimeter}"`);
-      });
-
-      // Log les aides Sarthe si trouvées
-      if (sartheAids.length > 0) {
-        console.log(`📊 Aides de la Sarthe trouvées:`);
-        sartheAids.forEach(aid => {
-          console.log(`  ✓ "${aid.name}": ${aid.perimeter}`);
-        });
-      }
 
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
