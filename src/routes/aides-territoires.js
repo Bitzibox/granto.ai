@@ -149,11 +149,12 @@ router.get('/search', async (req, res) => {
         const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
 
         // 1. TOUJOURS inclure les aides nationales (France ou Pays)
+        // IMPORTANT: "Île-de-France" contient "france" donc on doit vérifier scale d'abord
         const isNational =
           perimeterScale === 'france' ||
           perimeterScale === 'pays' ||
           perimeter === 'france' ||
-          perimeter.includes('france');
+          (perimeter.includes('france') && !perimeter.includes('île')); // Exclure "Île-de-France"
 
         if (isNational) {
           nationalCount++;
