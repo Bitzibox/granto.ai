@@ -126,6 +126,34 @@ router.get('/search', async (req, res) => {
     // Récupérer le territoire saisi par l'utilisateur
     const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
 
+    // Filtrer par pertinence des mots-clés si spécifiés
+    const searchText = req.query.text;
+    if (searchText && searchText.trim()) {
+      const initialCount = filteredResults.length;
+      const keywords = searchText.toLowerCase().split(/\s+/).filter(k => k.length > 2);
+
+      console.log(`🔍 Filtrage par pertinence des mots-clés: "${keywords.join('", "')}"`);
+
+      filteredResults = filteredResults.filter(aid => {
+        const name = (aid.name || '').toLowerCase();
+        const description = (aid.description || '').toLowerCase();
+        const combinedText = name + ' ' + description;
+
+        // Au moins un mot-clé significatif doit être présent dans le nom ou la description
+        const hasRelevantKeyword = keywords.some(keyword =>
+          name.includes(keyword) || description.includes(keyword)
+        );
+
+        if (!hasRelevantKeyword && initialCount <= 10) {
+          console.log(`❌ Non pertinent: "${aid.name}" (mots-clés manquants)`);
+        }
+
+        return hasRelevantKeyword;
+      });
+
+      console.log(`✅ Filtrage par pertinence: ${initialCount} → ${filteredResults.length} résultats`);
+    }
+
     // Si un territoire est spécifié ET ce n'est pas "commune", filtrer géographiquement
     if (territoire && territoire !== 'commune') {
       console.log(`🔍 Filtrage géographique pour: "${territoire}"`);
