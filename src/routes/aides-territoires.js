@@ -76,16 +76,44 @@ router.get('/search', async (req, res) => {
     const aidTypeFilter = req.query.aid_types;
     if (aidTypeFilter && aidTypeFilter !== 'all') {
       const initialCount = filteredResults.length;
+      console.log(`🔍 Tentative de filtrage par type "${aidTypeFilter}"...`);
+
       filteredResults = filteredResults.filter(aid => {
-        // aid.aid_types est un tableau de types
+        // aid.aid_types peut être un tableau de strings OU d'objets
         const aidTypes = aid.aid_types || [];
-        const hasType = aidTypes.includes(aidTypeFilter);
-        if (!hasType && initialCount <= 5) {
-          console.log(`❌ Filtre: "${aid.name}" n'a pas le type "${aidTypeFilter}" (types: ${JSON.stringify(aidTypes)})`);
+
+        // Log détaillé pour comprendre la structure
+        if (initialCount <= 10) {
+          console.log(`  📋 "${aid.name}": aid_types=${JSON.stringify(aidTypes)}, recherché="${aidTypeFilter}"`);
         }
+
+        // Vérifier si le type recherché est présent
+        // Gérer à la fois les tableaux de strings et d'objets
+        let hasType = false;
+
+        if (Array.isArray(aidTypes)) {
+          // Si c'est un tableau de strings
+          if (aidTypes.includes(aidTypeFilter)) {
+            hasType = true;
+          }
+          // Si c'est un tableau d'objets, chercher dans les slugs ou ids
+          else if (aidTypes.length > 0 && typeof aidTypes[0] === 'object') {
+            hasType = aidTypes.some(type =>
+              type.slug === aidTypeFilter ||
+              type.id === aidTypeFilter ||
+              type === aidTypeFilter
+            );
+          }
+        }
+
         return hasType;
       });
-      console.log(`🔍 Filtrage par type "${aidTypeFilter}": ${initialCount} → ${filteredResults.length} résultats`);
+
+      console.log(`✅ Filtrage par type "${aidTypeFilter}": ${initialCount} → ${filteredResults.length} résultats`);
+
+      if (filteredResults.length === 0 && initialCount > 0) {
+        console.log(`⚠️ ATTENTION: Aucun résultat après filtrage par type. Vérifiez que le paramètre correspond aux valeurs de l'API.`);
+      }
     }
 
     // Récupérer le territoire saisi par l'utilisateur
@@ -99,12 +127,14 @@ router.get('/search', async (req, res) => {
       const targetRegion = DEPT_TO_REGION[territoire] || findRegionForCity(territoire);
       console.log(`📍 Région identifiée: ${targetRegion || 'aucune'}`);
 
+      const beforeGeoFilter = filteredResults.length;
+      let excludedCount = 0;
+
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
         const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
 
         // 1. TOUJOURS inclure les aides nationales (France ou Pays)
-        // Vérifier le perimeter_scale ET le perimeter pour plus de sécurité
         const isNational =
           perimeterScale === 'france' ||
           perimeterScale === 'pays' ||
@@ -112,12 +142,13 @@ router.get('/search', async (req, res) => {
           perimeter.includes('france');
 
         if (isNational) {
-          console.log(`✅ Aide nationale incluse: ${aid.name} (scale: ${aid.perimeter_scale}, perimeter: ${aid.perimeter})`);
+          console.log(`✅ Nationale: "${aid.name}"`);
           return true;
         }
 
         // 2. Inclure les aides régionales si on a identifié une région
         if (targetRegion && perimeter.includes(targetRegion)) {
+          console.log(`✅ Régionale: "${aid.name}" (${aid.perimeter})`);
           return true;
         }
 
@@ -129,22 +160,30 @@ router.get('/search', async (req, res) => {
                         territoire === '72';
 
         if (isSarthe && (perimeter.includes('sarthe') || perimeter.includes('72'))) {
+          console.log(`✅ Départementale: "${aid.name}"`);
           return true;
         }
 
         // 4. Inclure les aides mentionnant spécifiquement la ville ou le territoire
         if (territoire.length > 2 && perimeter.includes(territoire)) {
+          console.log(`✅ Locale: "${aid.name}"`);
           return true;
         }
 
-        // 5. Inclure les aides sans périmètre spécifique (génériques)
-        if (!perimeter || perimeter === '') {
-          return true;
-        }
+        // 5. SUPPRIMÉ: Ne plus inclure automatiquement les aides sans périmètre
+        // Cela causait l'inclusion d'aides d'autres régions
 
-        // 6. Exclure les aides d'autres régions spécifiques
+        // 6. Exclure les aides d'autres régions
+        excludedCount++;
+        if (excludedCount <= 3) {
+          console.log(`❌ EXCLUE: "${aid.name}" (${aid.perimeter_scale} - ${aid.perimeter})`);
+        }
         return false;
       });
+
+      if (excludedCount > 3) {
+        console.log(`❌ ... et ${excludedCount - 3} autres aides exclues`);
+      }
 
       console.log(`✅ ${filteredResults.length} résultats après filtrage géographique`);
     } else {
