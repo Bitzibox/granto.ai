@@ -74,6 +74,18 @@ router.get('/search', async (req, res) => {
 
     let filteredResults = data.results || [];
 
+    // Mapping ID → slug pour aid_types_full (l'API utilise des IDs, pas des slugs)
+    const AID_TYPE_ID_TO_SLUG = {
+      1: 'grant',                    // Subvention
+      2: 'loan',                     // Prêt
+      3: 'recoverable_advance',      // Avance récupérable
+      4: 'cee',                      // Certificat d'économie d'énergie
+      5: 'other',                    // Autre aide financière
+      6: 'technical_engineering',    // Ingénierie technique
+      7: 'financial_engineering',    // Ingénierie financière
+      8: 'legal_engineering'         // Ingénierie juridique
+    };
+
     // Filtrer par type d'aide côté backend si spécifié
     const aidTypeFilter = req.query.aid_types;
     if (aidTypeFilter && aidTypeFilter !== 'all') {
@@ -81,10 +93,8 @@ router.get('/search', async (req, res) => {
       console.log(`🔍 Tentative de filtrage par type "${aidTypeFilter}"...`);
 
       filteredResults = filteredResults.filter(aid => {
-        // L'API retourne aid_types en français ET aid_types_full avec les slugs
-        // On doit vérifier aid_types_full qui contient les objets avec slug
+        // L'API retourne aid_types_full avec des objets {id, name}
         const aidTypesFull = aid.aid_types_full || [];
-        const aidTypes = aid.aid_types || [];
 
         // Log détaillé pour les 5 premières aides
         if (initialCount <= 5) {
@@ -93,19 +103,14 @@ router.get('/search', async (req, res) => {
           console.log(`     recherché = "${aidTypeFilter}"`);
         }
 
-        // Vérifier dans aid_types_full (objets avec slug)
+        // Vérifier dans aid_types_full en mappant les IDs aux slugs
         let hasType = false;
 
         if (Array.isArray(aidTypesFull) && aidTypesFull.length > 0) {
-          hasType = aidTypesFull.some(type =>
-            type.slug === aidTypeFilter ||
-            type.id === aidTypeFilter
-          );
-        }
-
-        // Fallback: vérifier aussi dans aid_types (strings) au cas où
-        if (!hasType && Array.isArray(aidTypes)) {
-          hasType = aidTypes.includes(aidTypeFilter);
+          hasType = aidTypesFull.some(type => {
+            const slug = AID_TYPE_ID_TO_SLUG[type.id];
+            return slug === aidTypeFilter;
+          });
         }
 
         return hasType;
@@ -131,6 +136,13 @@ router.get('/search', async (req, res) => {
 
       const beforeGeoFilter = filteredResults.length;
       let excludedCount = 0;
+      let nationalCount = 0;
+
+      // Log des premières aides pour comprendre leur structure
+      console.log(`📊 Aperçu des 3 premières aides avant filtrage géographique:`);
+      filteredResults.slice(0, 3).forEach(aid => {
+        console.log(`  - "${aid.name}": scale="${aid.perimeter_scale}", perimeter="${aid.perimeter}"`);
+      });
 
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
@@ -144,7 +156,10 @@ router.get('/search', async (req, res) => {
           perimeter.includes('france');
 
         if (isNational) {
-          console.log(`✅ Nationale: "${aid.name}"`);
+          nationalCount++;
+          if (nationalCount <= 3) {
+            console.log(`✅ Nationale: "${aid.name}" (scale: "${aid.perimeter_scale}", perimeter: "${aid.perimeter}")`);
+          }
           return true;
         }
 
@@ -187,7 +202,12 @@ router.get('/search', async (req, res) => {
         console.log(`❌ ... et ${excludedCount - 3} autres aides exclues`);
       }
 
-      console.log(`✅ ${filteredResults.length} résultats après filtrage géographique`);
+      if (nationalCount > 3) {
+        console.log(`✅ ... et ${nationalCount - 3} autres aides nationales`);
+      }
+
+      console.log(`📊 Résumé filtrage géographique: ${beforeGeoFilter} → ${filteredResults.length} résultats (${nationalCount} nationales)`);
+
     } else {
       // Pas de territoire spécifié = retourner tous les résultats
       console.log('📍 Pas de filtrage géographique, retour de tous les résultats');
