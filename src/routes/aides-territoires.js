@@ -79,8 +79,16 @@ router.get('/search', async (req, res) => {
         const perimeter = (aid.perimeter || '').toLowerCase();
         const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
 
-        // 1. TOUJOURS inclure les aides nationales
-        if (perimeter === 'france' || perimeterScale === 'france' || perimeterScale === 'pays') {
+        // 1. TOUJOURS inclure les aides nationales (France ou Pays)
+        // Vérifier le perimeter_scale ET le perimeter pour plus de sécurité
+        const isNational =
+          perimeterScale === 'france' ||
+          perimeterScale === 'pays' ||
+          perimeter === 'france' ||
+          perimeter.includes('france');
+
+        if (isNational) {
+          console.log(`✅ Aide nationale incluse: ${aid.name} (scale: ${aid.perimeter_scale}, perimeter: ${aid.perimeter})`);
           return true;
         }
 

@@ -229,7 +229,7 @@ export function GrantSearch() {
     setHasSearched(true)
 
     try {
-      // 1. Recherche avec les critères de l'utilisateur
+      // Recherche avec les critères de l'utilisateur
       const params = new URLSearchParams()
       if (territoire) params.append('targeted_audiences', territoire)
       if (motsCles) params.append('text', motsCles)
@@ -245,44 +245,7 @@ export function GrantSearch() {
       }
 
       const data = await response.json()
-      let allResults = data.results || []
-
-      // 2. Si un territoire est spécifié, récupérer aussi les aides nationales (France uniquement)
-      if (territoire) {
-        const nationalParams = new URLSearchParams()
-        // Chercher spécifiquement les aides à échelle nationale
-        nationalParams.append('perimeter', 'france')
-        if (motsCles) nationalParams.append('text', motsCles)
-        if (typeAide) nationalParams.append('aid_types', typeAide)
-        if (categorie) nationalParams.append('categories', categorie)
-
-        try {
-          const nationalResponse = await fetch(
-            `/api/aides-territoires/search?${nationalParams.toString()}`
-          )
-          if (nationalResponse.ok) {
-            const nationalData = await nationalResponse.json()
-            const nationalResults = nationalData.results || []
-
-            // Filtrer pour ne garder QUE les aides nationales (échelle France/Pays)
-            // et éviter les aides d'autres régions/départements
-            const nationalAidsOnly = nationalResults.filter((aid: any) => {
-              const scale = aid.perimeter_scale
-              return scale === 'France' || scale === 'Pays' || scale === 'france' || scale === 'pays'
-            })
-
-            // Fusionner en évitant les doublons (par id)
-            const existingIds = new Set(allResults.map((aid: any) => aid.id))
-            const newNationalResults = nationalAidsOnly.filter(
-              (aid: any) => !existingIds.has(aid.id)
-            )
-            allResults = [...allResults, ...newNationalResults]
-          }
-        } catch (err) {
-          console.warn('Erreur lors de la récupération des aides nationales:', err)
-          // Continue avec les résultats régionaux
-        }
-      }
+      const allResults = data.results || []
 
       // Calculer les scores de compatibilité et trier
       const resultsWithScores = allResults.map(aid => ({
