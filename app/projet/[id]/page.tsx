@@ -2,17 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Edit, Trash2, Calendar, Euro, Building2, FileText } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Calendar, Euro, Building2, FileText, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { projetsAPI } from '@/lib/api'
+import { useProjectAidsCount } from '@/hooks/use-project-aids-count'
 
 export default function ProjetDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [projet, setProjet] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  // Compter les aides disponibles pour ce projet
+  const { count: aidsCount, loading: aidsLoading } = useProjectAidsCount({
+    territoire: projet?.collectivite?.nom,
+    keywords: projet?.titre,
+    enabled: !!projet
+  })
 
   useEffect(() => {
     if (params.id) {
@@ -33,7 +41,7 @@ export default function ProjetDetailPage() {
 
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return
-    
+
     try {
       await projetsAPI.delete(params.id as string)
       router.push('/')
@@ -41,6 +49,27 @@ export default function ProjetDetailPage() {
       console.error('Erreur suppression:', error)
       alert('Erreur lors de la suppression')
     }
+  }
+
+  const handleSearchSubventions = () => {
+    // Construire les paramètres de recherche à partir du projet
+    const searchParams = new URLSearchParams()
+
+    // Territoire depuis la collectivité
+    if (projet.collectivite?.nom) {
+      searchParams.append('territoire', projet.collectivite.nom)
+    }
+
+    // Mots-clés depuis le titre du projet
+    if (projet.titre) {
+      searchParams.append('text', projet.titre)
+    }
+
+    // Indiquer qu'on vient d'un projet
+    searchParams.append('fromProjet', params.id as string)
+
+    // Rediriger vers la page de recherche
+    router.push(`/recherche-subventions?${searchParams.toString()}`)
   }
 
   if (loading) {
@@ -159,6 +188,43 @@ export default function ProjetDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Recherche de subventions */}
+          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Rechercher des subventions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Trouvez des aides adaptées à ce projet en utilisant ses informations
+              </p>
+
+              {/* Badge du nombre d'aides */}
+              {aidsLoading ? (
+                <div className="mb-4 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                  Comptage des aides disponibles...
+                </div>
+              ) : aidsCount !== null && aidsCount > 0 ? (
+                <div className="mb-4">
+                  <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
+                    {aidsCount} aide{aidsCount > 1 ? 's' : ''} disponible{aidsCount > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ) : null}
+
+              <Button
+                onClick={handleSearchSubventions}
+                className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Lancer la recherche
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Informations clés */}
           <Card>
             <CardHeader>

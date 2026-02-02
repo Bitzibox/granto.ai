@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search,
   MapPin,
@@ -14,7 +14,9 @@ import {
   TrendingUp,
   X,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  ArrowLeft,
+  Info
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -64,6 +66,7 @@ const CATEGORIES = [
 
 export function GrantSearch() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [territoire, setTerritoire] = useState('')
   const [motsCles, setMotsCles] = useState('')
   const [typeAide, setTypeAide] = useState('')
@@ -78,9 +81,26 @@ export function GrantSearch() {
   const [addingToProject, setAddingToProject] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const [fromProjetId, setFromProjetId] = useState<string | null>(null)
+  const [projetName, setProjetName] = useState<string | null>(null)
+  const [showProjetBanner, setShowProjetBanner] = useState(true)
 
   // Restaurer les critères et résultats de recherche au montage du composant
   useEffect(() => {
+    // 1. PRIORITÉ: Vérifier les paramètres d'URL (redirection depuis un projet)
+    const urlTerritoire = searchParams.get('territoire')
+    const urlText = searchParams.get('text')
+    const urlFromProjet = searchParams.get('fromProjet')
+
+    if (urlTerritoire || urlText || urlFromProjet) {
+      // Pré-remplir depuis les paramètres d'URL
+      if (urlTerritoire) setTerritoire(urlTerritoire)
+      if (urlText) setMotsCles(urlText)
+      if (urlFromProjet) setFromProjetId(urlFromProjet)
+      return
+    }
+
+    // 2. SINON: Restaurer depuis localStorage
     const savedSearch = localStorage.getItem('granto_search_criteria')
     const savedResults = localStorage.getItem('granto_search_results')
 
@@ -105,7 +125,19 @@ export function GrantSearch() {
         console.error('Erreur lors de la restauration des critères:', err)
       }
     }
-  }, [])
+  }, [searchParams])
+
+  // Charger les détails du projet si on vient d'un projet
+  useEffect(() => {
+    if (fromProjetId) {
+      fetch(`/api/projets/${fromProjetId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) setProjetName(data.titre)
+        })
+        .catch(err => console.error('Erreur chargement projet:', err))
+    }
+  }, [fromProjetId])
 
   // Sauvegarder les critères de recherche à chaque modification
   useEffect(() => {
@@ -383,9 +415,9 @@ export function GrantSearch() {
 
       {/* Message de succès */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <span className="text-green-800">{successMessage}</span>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 dark:bg-green-950/30 dark:border-green-800">
+          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <span className="text-green-800 dark:text-green-200">{successMessage}</span>
           <Button
             variant="ghost"
             size="sm"
@@ -394,6 +426,43 @@ export function GrantSearch() {
           >
             <X className="h-4 w-4" />
           </Button>
+        </div>
+      )}
+
+      {/* Bandeau contextuel projet */}
+      {fromProjetId && showProjetBanner && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-950/30 dark:border-blue-800">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                Recherche pour un projet
+              </h3>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                {projetName ? (
+                  <>Les critères de recherche ont été pré-remplis depuis le projet <span className="font-medium">"{projetName}"</span></>
+                ) : (
+                  <>Les critères de recherche ont été pré-remplis depuis votre projet</>
+                )}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-blue-700 hover:text-blue-900 hover:bg-blue-100 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-900/50 -ml-2"
+                onClick={() => router.push(`/projet/${fromProjetId}`)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Retour au projet
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowProjetBanner(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
