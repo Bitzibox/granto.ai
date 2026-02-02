@@ -66,44 +66,46 @@ router.get('/search', async (req, res) => {
     if (params.aid_types) {
       console.log(`🔍 Filtre aid_types actif: "${params.aid_types}"`);
       data.results?.slice(0, 3).forEach(aid => {
-        console.log(`  - ${aid.name}: types = ${JSON.stringify(aid.aid_types)}`);
+        console.log(`  - ${aid.name}:`);
+        console.log(`    aid_types = ${JSON.stringify(aid.aid_types)}`);
+        console.log(`    aid_types_full = ${JSON.stringify(aid.aid_types_full)}`);
       });
     }
 
     let filteredResults = data.results || [];
 
-    // Filtrer par type d'aide côté backend si spécifié (au cas où l'API ne filtre pas correctement)
+    // Filtrer par type d'aide côté backend si spécifié
     const aidTypeFilter = req.query.aid_types;
     if (aidTypeFilter && aidTypeFilter !== 'all') {
       const initialCount = filteredResults.length;
       console.log(`🔍 Tentative de filtrage par type "${aidTypeFilter}"...`);
 
       filteredResults = filteredResults.filter(aid => {
-        // aid.aid_types peut être un tableau de strings OU d'objets
+        // L'API retourne aid_types en français ET aid_types_full avec les slugs
+        // On doit vérifier aid_types_full qui contient les objets avec slug
+        const aidTypesFull = aid.aid_types_full || [];
         const aidTypes = aid.aid_types || [];
 
-        // Log détaillé pour comprendre la structure
-        if (initialCount <= 10) {
-          console.log(`  📋 "${aid.name}": aid_types=${JSON.stringify(aidTypes)}, recherché="${aidTypeFilter}"`);
+        // Log détaillé pour les 5 premières aides
+        if (initialCount <= 5) {
+          console.log(`  📋 "${aid.name}":`);
+          console.log(`     aid_types_full = ${JSON.stringify(aidTypesFull)}`);
+          console.log(`     recherché = "${aidTypeFilter}"`);
         }
 
-        // Vérifier si le type recherché est présent
-        // Gérer à la fois les tableaux de strings et d'objets
+        // Vérifier dans aid_types_full (objets avec slug)
         let hasType = false;
 
-        if (Array.isArray(aidTypes)) {
-          // Si c'est un tableau de strings
-          if (aidTypes.includes(aidTypeFilter)) {
-            hasType = true;
-          }
-          // Si c'est un tableau d'objets, chercher dans les slugs ou ids
-          else if (aidTypes.length > 0 && typeof aidTypes[0] === 'object') {
-            hasType = aidTypes.some(type =>
-              type.slug === aidTypeFilter ||
-              type.id === aidTypeFilter ||
-              type === aidTypeFilter
-            );
-          }
+        if (Array.isArray(aidTypesFull) && aidTypesFull.length > 0) {
+          hasType = aidTypesFull.some(type =>
+            type.slug === aidTypeFilter ||
+            type.id === aidTypeFilter
+          );
+        }
+
+        // Fallback: vérifier aussi dans aid_types (strings) au cas où
+        if (!hasType && Array.isArray(aidTypes)) {
+          hasType = aidTypes.includes(aidTypeFilter);
         }
 
         return hasType;
