@@ -193,7 +193,9 @@ router.get('/search', async (req, res) => {
       console.log(`🔍 Filtrage géographique pour: "${territoire}"`);
 
       // Identifier le département et la région cible
-      const targetDept = CITY_TO_DEPT[territoire] || DEPT_TO_REGION[territoire] ? territoire : null;
+      // Si c'est une ville connue, récupérer son département
+      // Sinon si c'est déjà un département connu, l'utiliser directement
+      const targetDept = CITY_TO_DEPT[territoire] || (DEPT_TO_REGION[territoire] ? territoire : null);
       const targetRegion = targetDept ? DEPT_TO_REGION[targetDept] : (DEPT_TO_REGION[territoire] || findRegionForCity(territoire));
 
       console.log(`📍 Ville: "${territoire}" → Département: ${targetDept || 'inconnu'} → Région: ${targetRegion || 'inconnue'}`);
