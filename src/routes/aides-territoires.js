@@ -15,7 +15,41 @@ const DEPT_TO_REGION = {
   'maine-et-loire': 'pays de la loire',
   'mayenne': 'pays de la loire',
   'vendée': 'pays de la loire',
-  'vendee': 'pays de la loire'
+  'vendee': 'pays de la loire',
+
+  // Normandie
+  '14': 'normandie',
+  '27': 'normandie',
+  '50': 'normandie',
+  '61': 'normandie',
+  '76': 'normandie',
+  'calvados': 'normandie',
+  'eure': 'normandie',
+  'manche': 'normandie',
+  'orne': 'normandie',
+  'seine-maritime': 'normandie',
+};
+
+// Mapping ville → département
+const CITY_TO_DEPT = {
+  // Pays de la Loire
+  'le mans': 'sarthe',
+  'mans': 'sarthe',
+  'nantes': 'loire-atlantique',
+  'angers': 'maine-et-loire',
+  'laval': 'mayenne',
+  'la roche-sur-yon': 'vendée',
+
+  // Normandie
+  'caen': 'calvados',
+  'évreux': 'eure',
+  'evreux': 'eure',
+  'saint-lô': 'manche',
+  'saint-lo': 'manche',
+  'alençon': 'orne',
+  'alencon': 'orne',
+  'rouen': 'seine-maritime',
+  'le havre': 'seine-maritime',
 };
 
 const PAYS_LOIRE_DEPTS = ['44', '49', '53', '72', '85', 'loire-atlantique', 'maine-et-loire', 'mayenne', 'sarthe', 'vendée', 'vendee'];
@@ -158,9 +192,11 @@ router.get('/search', async (req, res) => {
     if (territoire && territoire !== 'commune') {
       console.log(`🔍 Filtrage géographique pour: "${territoire}"`);
 
-      // Identifier la région cible
-      const targetRegion = DEPT_TO_REGION[territoire] || findRegionForCity(territoire);
-      console.log(`📍 Région identifiée: ${targetRegion || 'aucune'}`);
+      // Identifier le département et la région cible
+      const targetDept = CITY_TO_DEPT[territoire] || DEPT_TO_REGION[territoire] ? territoire : null;
+      const targetRegion = targetDept ? DEPT_TO_REGION[targetDept] : (DEPT_TO_REGION[territoire] || findRegionForCity(territoire));
+
+      console.log(`📍 Ville: "${territoire}" → Département: ${targetDept || 'inconnu'} → Région: ${targetRegion || 'inconnue'}`);
 
       const beforeGeoFilter = filteredResults.length;
       let excludedCount = 0;
@@ -187,7 +223,7 @@ router.get('/search', async (req, res) => {
         if (isNational) {
           nationalCount++;
           if (nationalCount <= 3) {
-            console.log(`✅ Nationale: "${aid.name}" (scale: "${aid.perimeter_scale}", perimeter: "${aid.perimeter}")`);
+            console.log(`✅ Nationale: "${aid.name}"`);
           }
           return true;
         }
@@ -198,15 +234,9 @@ router.get('/search', async (req, res) => {
           return true;
         }
 
-        // 3. Inclure les aides du département pour les villes de Sarthe
-        const isSarthe = territoire.includes('mans') ||
-                        territoire.includes('saint-mars') ||
-                        territoire.includes('saint mars') ||
-                        territoire.includes('sarthe') ||
-                        territoire === '72';
-
-        if (isSarthe && (perimeter.includes('sarthe') || perimeter.includes('72'))) {
-          console.log(`✅ Départementale: "${aid.name}"`);
+        // 3. Inclure les aides départementales si on a identifié un département
+        if (targetDept && perimeter.includes(targetDept)) {
+          console.log(`✅ Départementale: "${aid.name}" (${aid.perimeter})`);
           return true;
         }
 
