@@ -143,15 +143,19 @@ export function GrantSearch() {
     if (aid.perimeter && searchTerritoire) {
       const perimeterLower = aid.perimeter.toLowerCase()
       const territoireLower = searchTerritoire.toLowerCase()
-      
+
       if (perimeterLower.includes(territoireLower) || territoireLower.includes(perimeterLower)) {
         score += 40
         details.push('Territoire correspond')
-      } else if (aid.perimeter_scale === 'Région' || aid.perimeter_scale === 'France') {
+      } else if (aid.perimeter_scale === 'France' || aid.perimeter_scale === 'Pays') {
+        // Les aides nationales sont toujours pertinentes quand un territoire est recherché
+        score += 35
+        details.push('Aide nationale (tout territoire)')
+      } else if (aid.perimeter_scale === 'Région') {
         score += 20
         details.push('Territoire couvert')
       }
-    } else if (aid.perimeter_scale === 'France') {
+    } else if (aid.perimeter_scale === 'France' || aid.perimeter_scale === 'Pays') {
       score += 30
       details.push('National (tout territoire)')
     }
@@ -161,7 +165,7 @@ export function GrantSearch() {
       const keywords = searchMotsCles.toLowerCase().split(' ')
       const description = (aid.description || '').toLowerCase()
       const name = (aid.name || '').toLowerCase()
-      
+
       let keywordMatches = 0
       keywords.forEach(keyword => {
         if (keyword.length > 2) {
@@ -172,7 +176,7 @@ export function GrantSearch() {
           }
         }
       })
-      
+
       const keywordScore = Math.min(40, keywordMatches * 10)
       score += keywordScore
       if (keywordScore > 20) {
@@ -187,7 +191,7 @@ export function GrantSearch() {
       score += 10
       details.push('Aide active')
     }
-    
+
     if (!aid.submission_deadline || new Date(aid.submission_deadline) > new Date()) {
       score += 10
       details.push('Candidature ouverte')
@@ -399,10 +403,10 @@ export function GrantSearch() {
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200'
-    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200'
-    if (score >= 40) return 'text-orange-600 bg-orange-50 border-orange-200'
-    return 'text-gray-600 bg-gray-50 border-gray-200'
+    if (score >= 80) return 'text-green-700 bg-green-100 border-green-300 dark:text-green-100 dark:bg-green-800/80 dark:border-green-600'
+    if (score >= 60) return 'text-blue-700 bg-blue-100 border-blue-300 dark:text-blue-100 dark:bg-blue-800/80 dark:border-blue-600'
+    if (score >= 40) return 'text-orange-700 bg-orange-100 border-orange-300 dark:text-orange-100 dark:bg-orange-800/80 dark:border-orange-600'
+    return 'text-slate-700 bg-slate-100 border-slate-300 dark:text-slate-100 dark:bg-slate-700/80 dark:border-slate-600'
   }
 
   return (
