@@ -256,20 +256,36 @@ router.get('/search', async (req, res) => {
     }
 
     // ÉTAPE 2 : Filtrer par pertinence des mots-clés si spécifiés
-    // Cette étape vient APRÈS le filtrage géographique pour ne pas éliminer les aides locales pertinentes
+    // IMPORTANT : Les aides régionales/départementales/locales sont TOUJOURS gardées (elles sont rares et précieuses)
+    // Seules les aides nationales sont filtrées par pertinence
     const searchText = req.query.text;
     if (searchText && searchText.trim()) {
       const initialCount = filteredResults.length;
       const keywords = searchText.toLowerCase().split(/\s+/).filter(k => k.length > 2);
 
-      console.log(`🔍 Filtrage par pertinence des mots-clés: "${keywords.join('", "')}"`);
+      console.log(`🔍 Filtrage par pertinence des mots-clés: "${keywords.join('", "'")}"`);
 
       filteredResults = filteredResults.filter(aid => {
+        const perimeter = (aid.perimeter || '').toLowerCase();
+        const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
+
+        // TOUJOURS garder les aides régionales, départementales et locales (pas de filtrage par pertinence)
+        const isNational =
+          perimeterScale === 'france' ||
+          perimeterScale === 'pays' ||
+          perimeter === 'france' ||
+          (perimeter.includes('france') && !perimeter.includes('île'));
+
+        if (!isNational) {
+          // Aide régionale/départementale/locale -> TOUJOURS garder
+          console.log(`✅ Garde (locale): "${aid.name}"`);
+          return true;
+        }
+
+        // Pour les aides nationales, vérifier la pertinence des mots-clés
         const name = (aid.name || '').toLowerCase();
         const description = (aid.description || '').toLowerCase();
-        const combinedText = name + ' ' + description;
 
-        // Au moins un mot-clé significatif doit être présent dans le nom ou la description
         const hasRelevantKeyword = keywords.some(keyword =>
           name.includes(keyword) || description.includes(keyword)
         );
