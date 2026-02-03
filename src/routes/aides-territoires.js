@@ -95,7 +95,8 @@ router.get('/search', async (req, res) => {
 
     const data = await searchAids(params);
 
-    console.log(`✅ ${data.count} résultats bruts de l'API`);
+    console.log(`✅ ${data.count} résultats bruts de l'API (count total)`);
+    console.log(`📦 ${data.results?.length || 0} résultats dans data.results (page actuelle)`);
 
     // Log des types d'aide pour déboguer le filtrage
     if (params.aid_types) {
