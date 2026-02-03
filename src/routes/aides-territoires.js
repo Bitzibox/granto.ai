@@ -264,7 +264,7 @@ router.get('/search', async (req, res) => {
       const initialCount = filteredResults.length;
       const keywords = searchText.toLowerCase().split(/\s+/).filter(k => k.length > 2);
 
-      console.log(`🔍 Filtrage par pertinence des mots-clés: "${keywords.join('", "'")}"`);
+      console.log(`🔍 Filtrage par pertinence des mots-clés: "${keywords.join('", "')}"`);
 
       filteredResults = filteredResults.filter(aid => {
         const perimeter = (aid.perimeter || '').toLowerCase();
