@@ -161,7 +161,102 @@ router.get('/search', async (req, res) => {
     // Récupérer le territoire saisi par l'utilisateur
     const territoire = (req.query.targeted_audiences || '').toLowerCase().trim();
 
-    // Filtrer par pertinence des mots-clés si spécifiés
+    // ÉTAPE 1 : Filtrage géographique côté backend (PRIORITÉ)
+    // Cela permet de garder les aides régionales/départementales même si elles ne contiennent pas les mots-clés
+    if (territoire && territoire !== 'commune') {
+      console.log(`🔍 Filtrage géographique côté backend pour: "${territoire}"`);
+
+      // Identifier le département et la région cible
+      // Si c'est une ville connue, récupérer son département
+      // Sinon si c'est déjà un département connu, l'utiliser directement
+      const targetDept = CITY_TO_DEPT[territoire] || (DEPT_TO_REGION[territoire] ? territoire : null);
+      const targetRegion = targetDept ? DEPT_TO_REGION[targetDept] : (DEPT_TO_REGION[territoire] || findRegionForCity(territoire));
+
+      console.log(`📍 Ville: "${territoire}" → Département: ${targetDept || 'inconnu'} → Région: ${targetRegion || 'inconnue'}`);
+
+      const beforeGeoFilter = filteredResults.length;
+      let excludedCount = 0;
+      let nationalCount = 0;
+      let regionalCount = 0;
+      let departmentalCount = 0;
+
+      filteredResults = filteredResults.filter(aid => {
+        const perimeter = (aid.perimeter || '').toLowerCase();
+        const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
+
+        // 1. TOUJOURS inclure les aides nationales (France ou Pays)
+        // IMPORTANT: "Île-de-France" contient "france" donc on doit vérifier scale d'abord
+        const isNational =
+          perimeterScale === 'france' ||
+          perimeterScale === 'pays' ||
+          perimeter === 'france' ||
+          (perimeter.includes('france') && !perimeter.includes('île')); // Exclure "Île-de-France"
+
+        if (isNational) {
+          nationalCount++;
+          if (nationalCount <= 3) {
+            console.log(`✅ Nationale: "${aid.name}"`);
+          }
+          return true;
+        }
+
+        // 2. Inclure les aides régionales si on a identifié une région
+        if (targetRegion && perimeter.includes(targetRegion)) {
+          regionalCount++;
+          if (regionalCount <= 3) {
+            console.log(`✅ Régionale: "${aid.name}" (${aid.perimeter})`);
+          }
+          return true;
+        }
+
+        // 3. Inclure les aides départementales si on a identifié un département
+        if (targetDept && perimeter.includes(targetDept)) {
+          departmentalCount++;
+          if (departmentalCount <= 3) {
+            console.log(`✅ Départementale: "${aid.name}" (${aid.perimeter})`);
+          }
+          return true;
+        }
+
+        // 4. Inclure les aides mentionnant spécifiquement la ville ou le territoire
+        if (territoire.length > 2 && perimeter.includes(territoire)) {
+          console.log(`✅ Locale: "${aid.name}"`);
+          return true;
+        }
+
+        // 5. Exclure les aides d'autres régions
+        excludedCount++;
+        if (excludedCount <= 3) {
+          console.log(`❌ EXCLUE: "${aid.name}" (${aid.perimeter_scale} - ${aid.perimeter})`);
+        }
+        return false;
+      });
+
+      if (excludedCount > 3) {
+        console.log(`❌ ... et ${excludedCount - 3} autres aides exclues`);
+      }
+
+      if (nationalCount > 3) {
+        console.log(`✅ ... et ${nationalCount - 3} autres aides nationales`);
+      }
+
+      if (regionalCount > 3) {
+        console.log(`✅ ... et ${regionalCount - 3} autres aides régionales`);
+      }
+
+      if (departmentalCount > 3) {
+        console.log(`✅ ... et ${departmentalCount - 3} autres aides départementales`);
+      }
+
+      console.log(`📊 Résumé filtrage géographique: ${beforeGeoFilter} → ${filteredResults.length} résultats (${nationalCount} nationales, ${regionalCount} régionales, ${departmentalCount} départementales)`);
+
+    } else {
+      // Pas de territoire spécifié = pas de filtrage géographique
+      console.log('📍 Pas de filtrage géographique');
+    }
+
+    // ÉTAPE 2 : Filtrer par pertinence des mots-clés si spécifiés
+    // Cette étape vient APRÈS le filtrage géographique pour ne pas éliminer les aides locales pertinentes
     const searchText = req.query.text;
     if (searchText && searchText.trim()) {
       const initialCount = filteredResults.length;
@@ -187,86 +282,6 @@ router.get('/search', async (req, res) => {
       });
 
       console.log(`✅ Filtrage par pertinence: ${initialCount} → ${filteredResults.length} résultats`);
-    }
-
-    // Filtrage géographique côté backend (car le paramètre perimeter de l'API ne fonctionne pas correctement)
-    if (territoire && territoire !== 'commune') {
-      console.log(`🔍 Filtrage géographique côté backend pour: "${territoire}"`);
-
-      // Identifier le département et la région cible
-      // Si c'est une ville connue, récupérer son département
-      // Sinon si c'est déjà un département connu, l'utiliser directement
-      const targetDept = CITY_TO_DEPT[territoire] || (DEPT_TO_REGION[territoire] ? territoire : null);
-      const targetRegion = targetDept ? DEPT_TO_REGION[targetDept] : (DEPT_TO_REGION[territoire] || findRegionForCity(territoire));
-
-      console.log(`📍 Ville: "${territoire}" → Département: ${targetDept || 'inconnu'} → Région: ${targetRegion || 'inconnue'}`);
-
-      const beforeGeoFilter = filteredResults.length;
-      let excludedCount = 0;
-      let nationalCount = 0;
-
-      filteredResults = filteredResults.filter(aid => {
-        const perimeter = (aid.perimeter || '').toLowerCase();
-        const perimeterScale = (aid.perimeter_scale || '').toLowerCase();
-
-        // 1. TOUJOURS inclure les aides nationales (France ou Pays)
-        // IMPORTANT: "Île-de-France" contient "france" donc on doit vérifier scale d'abord
-        const isNational =
-          perimeterScale === 'france' ||
-          perimeterScale === 'pays' ||
-          perimeter === 'france' ||
-          (perimeter.includes('france') && !perimeter.includes('île')); // Exclure "Île-de-France"
-
-        if (isNational) {
-          nationalCount++;
-          if (nationalCount <= 3) {
-            console.log(`✅ Nationale: "${aid.name}"`);
-          }
-          return true;
-        }
-
-        // 2. Inclure les aides régionales si on a identifié une région
-        if (targetRegion && perimeter.includes(targetRegion)) {
-          console.log(`✅ Régionale: "${aid.name}" (${aid.perimeter})`);
-          return true;
-        }
-
-        // 3. Inclure les aides départementales si on a identifié un département
-        if (targetDept && perimeter.includes(targetDept)) {
-          console.log(`✅ Départementale: "${aid.name}" (${aid.perimeter})`);
-          return true;
-        }
-
-        // 4. Inclure les aides mentionnant spécifiquement la ville ou le territoire
-        if (territoire.length > 2 && perimeter.includes(territoire)) {
-          console.log(`✅ Locale: "${aid.name}"`);
-          return true;
-        }
-
-        // 5. SUPPRIMÉ: Ne plus inclure automatiquement les aides sans périmètre
-        // Cela causait l'inclusion d'aides d'autres régions
-
-        // 6. Exclure les aides d'autres régions
-        excludedCount++;
-        if (excludedCount <= 3) {
-          console.log(`❌ EXCLUE: "${aid.name}" (${aid.perimeter_scale} - ${aid.perimeter})`);
-        }
-        return false;
-      });
-
-      if (excludedCount > 3) {
-        console.log(`❌ ... et ${excludedCount - 3} autres aides exclues`);
-      }
-
-      if (nationalCount > 3) {
-        console.log(`✅ ... et ${nationalCount - 3} autres aides nationales`);
-      }
-
-      console.log(`📊 Résumé filtrage géographique: ${beforeGeoFilter} → ${filteredResults.length} résultats (${nationalCount} nationales)`);
-
-    } else {
-      // Pas de territoire spécifié = retourner tous les résultats
-      console.log('📍 Pas de filtrage géographique, retour de tous les résultats');
     }
 
     // Nettoyer le HTML des descriptions et construire l'URL externe
