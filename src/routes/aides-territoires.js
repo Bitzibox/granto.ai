@@ -84,20 +84,9 @@ router.get('/search', async (req, res) => {
       params.categories = req.query.categories;
     }
 
-    // Utiliser le territoire comme périmètre géographique si spécifié
-    if (req.query.targeted_audiences && req.query.targeted_audiences.trim()) {
-      // Si c'est une ville/territoire spécifique, l'utiliser comme perimeter
-      // Sinon, l'utiliser comme targeted_audiences (type de structure)
-      const territoire = req.query.targeted_audiences.toLowerCase().trim();
-
-      if (territoire !== 'commune' && territoire !== 'epci' && territoire !== 'département') {
-        // C'est un nom de lieu spécifique -> utiliser comme perimeter
-        params.perimeter = req.query.targeted_audiences;
-      } else {
-        // C'est un type de structure -> utiliser comme targeted_audiences
-        params.targeted_audiences = territoire;
-      }
-    }
+    // TOUJOURS cibler les communes pour avoir le maximum d'aides
+    // Le filtrage géographique se fera côté backend
+    params.targeted_audiences = 'commune';
 
     // Augmenter le nombre de résultats
     params.pageSize = 200;
@@ -200,11 +189,8 @@ router.get('/search', async (req, res) => {
       console.log(`✅ Filtrage par pertinence: ${initialCount} → ${filteredResults.length} résultats`);
     }
 
-    // Si un territoire est spécifié ET qu'on n'a pas utilisé le paramètre perimeter de l'API,
-    // faire un filtrage géographique côté backend
-    if (params.perimeter) {
-      console.log(`✅ Filtrage géographique fait par l'API avec perimeter="${params.perimeter}"`);
-    } else if (territoire && territoire !== 'commune') {
+    // Filtrage géographique côté backend (car le paramètre perimeter de l'API ne fonctionne pas correctement)
+    if (territoire && territoire !== 'commune') {
       console.log(`🔍 Filtrage géographique côté backend pour: "${territoire}"`);
 
       // Identifier le département et la région cible
