@@ -88,27 +88,52 @@ router.get('/search', async (req, res) => {
     // Le filtrage géographique se fera côté backend
     params.targeted_audiences = 'commune';
 
-    // Augmenter le nombre de résultats
-    params.pageSize = 200;
+    // L'API limite à 50 résultats par page, il faut paginer
+    params.pageSize = 50;
 
     console.log('Paramètres envoyés à l\'API:', params);
 
-    const data = await searchAids(params);
+    // Récupérer toutes les pages de résultats
+    let allResults = [];
+    let currentPage = 1;
+    let totalCount = 0;
 
-    console.log(`✅ ${data.count} résultats bruts de l'API (count total)`);
-    console.log(`📦 ${data.results?.length || 0} résultats dans data.results (page actuelle)`);
+    console.log('📄 Récupération de toutes les pages...');
 
-    // Log des types d'aide pour déboguer le filtrage
-    if (params.aid_types) {
-      console.log(`🔍 Filtre aid_types actif: "${params.aid_types}"`);
-      data.results?.slice(0, 3).forEach(aid => {
-        console.log(`  - ${aid.name}:`);
-        console.log(`    aid_types = ${JSON.stringify(aid.aid_types)}`);
-        console.log(`    aid_types_full = ${JSON.stringify(aid.aid_types_full)}`);
-      });
+    while (true) {
+      params.page = currentPage;
+      const data = await searchAids(params);
+
+      if (currentPage === 1) {
+        totalCount = data.count;
+        console.log(`✅ ${totalCount} résultats totaux à récupérer`);
+      }
+
+      const pageResults = data.results || [];
+      console.log(`📦 Page ${currentPage}: ${pageResults.length} résultats`);
+
+      if (pageResults.length === 0) {
+        break; // Plus de résultats
+      }
+
+      allResults = allResults.concat(pageResults);
+      currentPage++;
+
+      // Sécurité : arrêter après 10 pages max (500 résultats)
+      if (currentPage > 10) {
+        console.log('⚠️ Limite de 10 pages atteinte');
+        break;
+      }
+
+      // Si on a récupéré tous les résultats, arrêter
+      if (allResults.length >= totalCount) {
+        break;
+      }
     }
 
-    let filteredResults = data.results || [];
+    console.log(`✅ Total récupéré: ${allResults.length} résultats sur ${totalCount}`);
+
+    let filteredResults = allResults;
 
     // Mapping ID → slug pour aid_types_full (l'API utilise des IDs, pas des slugs)
     const AID_TYPE_ID_TO_SLUG = {
