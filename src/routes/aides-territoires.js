@@ -337,7 +337,7 @@ router.get('/search', async (req, res) => {
 
     res.json({
       count: cleanedResults.length,
-      total_available: data.count,
+      total_available: totalCount,
       results: cleanedResults
     });
 
