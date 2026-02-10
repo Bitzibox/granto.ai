@@ -222,14 +222,58 @@ router.post('/deliberation', async (req, res) => {
 });
 
 /**
+ * Valide et sanitize un nom de fichier pour prévenir le directory traversal
+ */
+function sanitizeFileName(fileName) {
+  // Supprimer les caractères dangereux et les séquences de traversal
+  const sanitized = path.basename(fileName).replace(/[^a-zA-Z0-9_\-\.]/g, '');
+
+  // Vérifier que c'est un PDF
+  if (!sanitized.toLowerCase().endsWith('.pdf')) {
+    throw new Error('Seuls les fichiers PDF sont autorisés');
+  }
+
+  // Vérifier la longueur
+  if (sanitized.length === 0 || sanitized.length > 255) {
+    throw new Error('Nom de fichier invalide');
+  }
+
+  return sanitized;
+}
+
+/**
+ * Vérifie que le chemin final est bien dans le répertoire autorisé
+ */
+function isPathSafe(requestedPath, allowedDir) {
+  const resolvedPath = path.resolve(requestedPath);
+  const resolvedAllowedDir = path.resolve(allowedDir);
+  return resolvedPath.startsWith(resolvedAllowedDir);
+}
+
+/**
  * GET /api/pdf/download/:fileName
  * Télécharge un PDF généré
  */
 router.get('/download/:fileName', async (req, res) => {
   try {
     const { fileName } = req.params;
+
+    // SÉCURITÉ: Valider et sanitizer le nom de fichier
+    let sanitizedFileName;
+    try {
+      sanitizedFileName = sanitizeFileName(fileName);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
     const pdfGenerator = getPdfGenerator();
-    const filePath = path.join(pdfGenerator.outputDir, fileName);
+    const filePath = path.join(pdfGenerator.outputDir, sanitizedFileName);
+
+    // SÉCURITÉ: Vérifier que le chemin final est bien dans le répertoire autorisé
+    if (!isPathSafe(filePath, pdfGenerator.outputDir)) {
+      console.warn(`Tentative de directory traversal bloquée: ${fileName}`);
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Fichier non trouvé' });
@@ -237,19 +281,19 @@ router.get('/download/:fileName', async (req, res) => {
 
     // Mettre à jour le compteur de téléchargement si en base
     await prisma.generatedPdf.updateMany({
-      where: { fileName },
+      where: { fileName: sanitizedFileName },
       data: {
         downloadCount: { increment: 1 },
         lastDownload: new Date(),
       },
     });
 
-    res.download(filePath, fileName);
+    res.download(filePath, sanitizedFileName);
   } catch (error) {
     console.error('Error downloading PDF:', error);
+    // SÉCURITÉ: Ne pas exposer les détails de l'erreur
     res.status(500).json({
-      error: 'Erreur lors du téléchargement',
-      message: error.message,
+      error: 'Erreur lors du téléchargement'
     });
   }
 });
@@ -305,9 +349,17 @@ router.get('/dossier/:dossierId', async (req, res) => {
 router.delete('/:fileName', async (req, res) => {
   try {
     const { fileName } = req.params;
-    const pdfGenerator = getPdfGenerator();
 
-    const deleted = pdfGenerator.deletePdf(fileName);
+    // SÉCURITÉ: Valider et sanitizer le nom de fichier
+    let sanitizedFileName;
+    try {
+      sanitizedFileName = sanitizeFileName(fileName);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const pdfGenerator = getPdfGenerator();
+    const deleted = pdfGenerator.deletePdf(sanitizedFileName);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Fichier non trouvé' });
@@ -315,15 +367,15 @@ router.delete('/:fileName', async (req, res) => {
 
     // Supprimer de la base aussi
     await prisma.generatedPdf.deleteMany({
-      where: { fileName },
+      where: { fileName: sanitizedFileName },
     });
 
     res.json({ success: true, message: 'PDF supprimé' });
   } catch (error) {
     console.error('Error deleting PDF:', error);
+    // SÉCURITÉ: Ne pas exposer les détails de l'erreur
     res.status(500).json({
-      error: 'Erreur lors de la suppression',
-      message: error.message,
+      error: 'Erreur lors de la suppression'
     });
   }
 });

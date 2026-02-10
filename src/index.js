@@ -1,20 +1,35 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+
+// Importer les middlewares de sécurité
+const {
+  generalLimiter,
+  helmetConfig,
+  secureLogger,
+  sanitizeErrors,
+  getCorsOptions
+} = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// SÉCURITÉ: Headers de sécurité avec Helmet
+app.use(helmetConfig);
 
-// Logging middleware
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`${timestamp} - ${req.method} ${req.path}`);
-  next();
-});
+// SÉCURITÉ: CORS configuré avec whitelist
+app.use(cors(getCorsOptions()));
+
+// SÉCURITÉ: Rate limiting global
+app.use(generalLimiter);
+
+// Middleware de parsing
+app.use(express.json({ limit: '10mb' })); // Limiter la taille des payloads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// SÉCURITÉ: Logging sécurisé (ne log pas les tokens)
+app.use(secureLogger);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -36,17 +51,14 @@ app.use('/api/aides-territoires', aidesTerritoriesRouter);
 
 // Gestion des erreurs 404
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route non trouvée' });
-});
-
-// Gestion des erreurs globales
-app.use((err, req, res, next) => {
-  console.error('Erreur:', err);
-  res.status(500).json({ 
-    error: 'Erreur serveur',
-    message: err.message 
+  res.status(404).json({
+    error: 'Route non trouvée',
+    code: 'NOT_FOUND'
   });
 });
+
+// SÉCURITÉ: Gestion des erreurs globales avec sanitization
+app.use(sanitizeErrors);
 
 // Démarrage du serveur
 const server = app.listen(PORT, '0.0.0.0', () => {
