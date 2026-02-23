@@ -23,6 +23,7 @@ const navigation = [
   { name: 'Mes dossiers', href: '/dossiers', icon: FileText },
   { name: 'Calendrier', href: '/calendrier', icon: Calendar },
   { name: 'Collectivités', href: '/collectivites', icon: Building2 },
+  { name: 'Paramètres', href: '/parametres/templates', icon: Settings },
 ]
 
 export function GrantoLayout({ children }: { children: React.ReactNode }) {
@@ -44,7 +45,7 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
             return (
               <Link
                 key={item.name}
@@ -63,12 +64,7 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
-          <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300 hover:scale-[1.02]">
-            <Settings className="h-5 w-5" />
-            Paramètres
-          </button>
-        </div>
+        <div className="border-t border-sidebar-border p-4" />
       </aside>
 
       {/* Main content */}
@@ -77,7 +73,7 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border glass px-8 shadow-sm">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-foreground">
-              {navigation.find((item) => item.href === pathname)?.name || 'Granto'}
+              {navigation.find((item) => item.href === '/' ? pathname === '/' : pathname.startsWith(item.href))?.name || 'Granto'}
             </h1>
           </div>
 
