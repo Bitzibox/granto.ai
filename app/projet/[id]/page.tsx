@@ -43,7 +43,10 @@ export default function ProjetDetailPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return
 
     try {
-      await projetsAPI.remove(params.id as string)
+      const res = await fetch(`/api/projets/${params.id}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 204) {
+        throw new Error('Erreur lors de la suppression')
+      }
       router.push('/')
     } catch (error) {
       console.error('Erreur suppression:', error)

@@ -31,7 +31,10 @@ export default function ProjetsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce projet ?')) return
     try {
-      await projetsAPI.remove(id)
+      const res = await fetch(`/api/projets/${id}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 204) {
+        throw new Error('Erreur lors de la suppression')
+      }
       loadProjets()
     } catch (error) {
       console.error('Erreur:', error)

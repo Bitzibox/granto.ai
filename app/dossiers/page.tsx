@@ -6,7 +6,6 @@ import { FileText, Eye, Trash2, Calendar, Euro } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { dossiersAPI } from '@/lib/api'
 
 const statutLabels: Record<string, { label: string; color: string }> = {
   brouillon: { label: 'Brouillon', color: 'bg-slate-500' },
@@ -28,7 +27,9 @@ export default function DossiersPage() {
 
   const loadDossiers = async () => {
     try {
-      const data = await dossiersAPI.getAll()
+      const res = await fetch('/api/dossiers')
+      if (!res.ok) throw new Error('Erreur chargement')
+      const data = await res.json()
       setDossiers(data)
     } catch (error) {
       console.error('Erreur:', error)
@@ -40,7 +41,11 @@ export default function DossiersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.')) return
     try {
-      await dossiersAPI.remove(id)
+      const res = await fetch(`/api/dossiers/${id}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 204) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Erreur lors de la suppression')
+      }
       loadDossiers()
     } catch (error: any) {
       console.error('Erreur lors de la suppression:', error)

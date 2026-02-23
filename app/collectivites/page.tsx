@@ -81,7 +81,10 @@ export default function CollectivitesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer cette collectivité ?')) return
     try {
-      await collectivitesAPI.remove(id)
+      const res = await fetch(`/api/collectivites/${id}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 204) {
+        throw new Error('Erreur lors de la suppression')
+      }
       loadCollectivites()
     } catch (error) {
       console.error('Erreur:', error)
