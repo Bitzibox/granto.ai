@@ -33,7 +33,7 @@ export const collectivitesAPI = {
   getById: (id: string) => fetchAPI(`/collectivites/${id}`),
   create: (data: any) => fetchAPI('/collectivites', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => fetchAPI(`/collectivites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => fetchAPI(`/collectivites/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => fetchAPI(`/collectivites/${id}`, { method: 'DELETE' }),
 };
 
 // Projets API
@@ -42,7 +42,7 @@ export const projetsAPI = {
   getById: (id: string) => fetchAPI(`/projets/${id}`),
   create: (data: any) => fetchAPI('/projets', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => fetchAPI(`/projets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => fetchAPI(`/projets/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => fetchAPI(`/projets/${id}`, { method: 'DELETE' }),
 };
 
 // Dispositifs API
@@ -51,7 +51,7 @@ export const dispositifsAPI = {
   getById: (id: string) => fetchAPI(`/dispositifs/${id}`),
   create: (data: any) => fetchAPI('/dispositifs', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => fetchAPI(`/dispositifs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => fetchAPI(`/dispositifs/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => fetchAPI(`/dispositifs/${id}`, { method: 'DELETE' }),
 };
 
 // Dossiers API
@@ -61,6 +61,6 @@ export const dossiersAPI = {
   getByProjet: (projetId: string) => fetchAPI(`/dossiers/projet/${projetId}`),
   create: (data: any) => fetchAPI('/dossiers', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => fetchAPI(`/dossiers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => fetchAPI(`/dossiers/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => fetchAPI(`/dossiers/${id}`, { method: 'DELETE' }),
   getStats: () => fetchAPI('/dossiers/stats/overview'),
 };
