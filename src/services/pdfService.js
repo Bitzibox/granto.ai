@@ -265,19 +265,17 @@ async function genererDossierPDF(params) {
     doc.moveDown(1);
   }
 
-  // Pied de page
-  const pageCount = doc.bufferedPageRange().count;
-  for (let i = 0; i < pageCount; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(8)
-       .fillColor('#666666')
-       .text(
-         `Document généré par Granto.ai le ${new Date().toLocaleDateString('fr-FR')} - Page ${i + 1}/${pageCount}`,
-         50,
-         doc.page.height - 50,
-         { align: 'center', width: doc.page.width - 100 }
-       );
-  }
+  // Pied de page (sur la dernière page uniquement)
+  // Position en bas de page
+  const footerY = doc.page.height - 50;
+  doc.fontSize(8)
+     .fillColor('#666666')
+     .text(
+       `Document généré par Granto.ai le ${new Date().toLocaleDateString('fr-FR')}`,
+       50,
+       footerY,
+       { align: 'center', width: doc.page.width - 100 }
+     );
 
   // Finaliser le PDF
   doc.end();
