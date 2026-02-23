@@ -19,6 +19,30 @@ async function genererDossierPDF(params) {
     analysis
   } = params;
 
+  // Calculer le plan de financement depuis les données de l'aide
+  const budget = analysis.montant_estime || projet.budget || 0;
+
+  // Taux de subvention depuis l'aide (prendre la moyenne si disponible)
+  let tauxSubvention = 0.5; // 50% par défaut
+  if (aide.subvention_rate_lower_bound && aide.subvention_rate_upper_bound) {
+    tauxSubvention = (aide.subvention_rate_lower_bound + aide.subvention_rate_upper_bound) / 200; // Moyenne en décimal
+  } else if (aide.subvention_rate_lower_bound) {
+    tauxSubvention = aide.subvention_rate_lower_bound / 100;
+  }
+
+  const montantSubvention = Math.round(budget * tauxSubvention);
+  const autofinancement = budget - montantSubvention;
+  const tauxPourcent = Math.round(tauxSubvention * 100);
+
+  // Calendrier réaliste basé sur le type de projet
+  const now = new Date();
+  const debutTravaux = new Date(now.getFullYear(), now.getMonth() + 3, 1); // Dans 3 mois
+  const finTravaux = new Date(now.getFullYear(), now.getMonth() + 9, 30); // 6 mois de travaux
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  };
+
   // Créer un nouveau document PDF
   const doc = new PDFDocument({
     size: 'A4',
@@ -37,25 +61,52 @@ async function genererDossierPDF(params) {
     console.warn('⚠️ Erreur génération contenu IA:', error.message);
     // Fallback: contenu basique
     contenu = {
-      contexte: `La commune de ${commune.nom} (${commune.departement}) souhaite réaliser un projet de ${analysis.categorie_principale}.`,
-      description: analysis.description_enrichie,
+      contexte: `La commune de ${commune.nom} (${commune.departement}) souhaite réaliser un projet de ${analysis.categorie_principale}. Ce projet s'inscrit dans une démarche d'amélioration des services aux habitants et de modernisation des infrastructures communales.`,
+      description: analysis.description_enrichie || projet.description,
       plan_financement: {
-        cout_total_ht: analysis.montant_estime,
-        subvention: Math.round(analysis.montant_estime * 0.7),
-        autofinancement: Math.round(analysis.montant_estime * 0.3)
+        cout_total_ht: budget,
+        subvention: montantSubvention,
+        autofinancement: autofinancement
       },
       calendrier: {
-        debut: 'T2 2026',
+        debut: formatDate(debutTravaux),
         duree: '6 mois',
-        fin: 'T4 2026'
+        fin: formatDate(finTravaux)
       },
       pieces_requises: [
-        'Délibération du conseil municipal',
+        'Délibération du conseil municipal validant le projet',
         'Plan de financement détaillé',
         'Devis des entreprises',
-        'Plan de situation'
+        'Plan de situation et cadastre',
+        'Notice descriptive des travaux'
       ]
     };
+  }
+
+  // S'assurer que le plan de financement utilise les bonnes valeurs
+  contenu.plan_financement = {
+    cout_total_ht: budget,
+    subvention: montantSubvention,
+    autofinancement: autofinancement
+  };
+
+  // S'assurer que le calendrier a des dates valides
+  if (!contenu.calendrier || !contenu.calendrier.debut || contenu.calendrier.debut === 'undefined') {
+    contenu.calendrier = {
+      debut: formatDate(debutTravaux),
+      duree: '6 mois',
+      fin: formatDate(finTravaux)
+    };
+  }
+
+  // S'assurer que pieces_requises est un tableau
+  if (!Array.isArray(contenu.pieces_requises)) {
+    contenu.pieces_requises = [
+      'Délibération du conseil municipal',
+      'Plan de financement détaillé',
+      'Devis des entreprises',
+      'Plan de situation'
+    ];
   }
 
   // En-tête
@@ -80,7 +131,7 @@ async function genererDossierPDF(params) {
      .fillColor('#000000')
      .text(`Commune : ${commune.nom}`)
      .text(`Département : ${commune.departement} - ${commune.region}`)
-     .text(`Code postal : ${commune.codePostal}`);
+     .text(`Code postal : ${commune.codePostal || ''}`);
 
   doc.moveDown(1.5);
 
@@ -117,30 +168,29 @@ async function genererDossierPDF(params) {
 
   const tableTop = doc.y;
   const col1 = 50;
-  const col2 = 350;
+  const col2 = 400;
 
   doc.fontSize(10).fillColor('#000000');
 
   // Lignes du tableau
   doc.text('Coût total HT', col1, tableTop);
-  doc.text(`${formatEuros(contenu.plan_financement.cout_total_ht)}`, col2, tableTop, { align: 'right' });
+  doc.text(formatEuros(contenu.plan_financement.cout_total_ht), col2, tableTop, { width: 150, align: 'right' });
 
   doc.text('Subvention sollicitée', col1, tableTop + 20);
-  doc.text(`${formatEuros(contenu.plan_financement.subvention)}`, col2, tableTop + 20, { align: 'right' });
+  doc.text(formatEuros(contenu.plan_financement.subvention), col2, tableTop + 20, { width: 150, align: 'right' });
 
   doc.text('Autofinancement', col1, tableTop + 40);
-  doc.text(`${formatEuros(contenu.plan_financement.autofinancement)}`, col2, tableTop + 40, { align: 'right' });
+  doc.text(formatEuros(contenu.plan_financement.autofinancement), col2, tableTop + 40, { width: 150, align: 'right' });
 
   // Ligne de séparation
   doc.moveTo(col1, tableTop + 55)
-     .lineTo(col2 + 100, tableTop + 55)
+     .lineTo(col2 + 150, tableTop + 55)
      .stroke();
 
   doc.text('Taux de subvention', col1, tableTop + 65);
-  const taux = Math.round((contenu.plan_financement.subvention / contenu.plan_financement.cout_total_ht) * 100);
-  doc.text(`${taux} %`, col2, tableTop + 65, { align: 'right' });
+  doc.text(`${tauxPourcent} %`, col2, tableTop + 65, { width: 150, align: 'right' });
 
-  doc.moveDown(5);
+  doc.y = tableTop + 90; // Position après le tableau
 
   // Calendrier
   doc.fontSize(12)
@@ -149,12 +199,25 @@ async function genererDossierPDF(params) {
 
   doc.moveDown(0.5);
   doc.fontSize(10)
-     .fillColor('#000000')
-     .text(`Début des travaux : ${contenu.calendrier.debut}`)
-     .text(`Durée prévisionnelle : ${contenu.calendrier.duree}`)
-     .text(`Fin des travaux : ${contenu.calendrier.fin}`);
+     .fillColor('#000000');
 
-  doc.moveDown(1.5);
+  const calTop = doc.y;
+  doc.text('Début des travaux :', col1, calTop);
+  doc.text(contenu.calendrier.debut, 250, calTop);
+
+  doc.text('Durée prévisionnelle :', col1, calTop + 20);
+  doc.text(contenu.calendrier.duree, 250, calTop + 20);
+
+  doc.text('Fin des travaux :', col1, calTop + 40);
+  doc.text(contenu.calendrier.fin, 250, calTop + 40);
+
+  doc.y = calTop + 60;
+  doc.moveDown(1);
+
+  // Vérifier s'il faut une nouvelle page
+  if (doc.y > 650) {
+    doc.addPage();
+  }
 
   // Pièces à fournir
   doc.fontSize(12)
@@ -166,10 +229,27 @@ async function genererDossierPDF(params) {
      .fillColor('#000000');
 
   contenu.pieces_requises.forEach((piece, index) => {
-    doc.text(`${index + 1}. ${piece}`);
+    const y = doc.y;
+
+    // Nouvelle page si besoin
+    if (y > 700) {
+      doc.addPage();
+    }
+
+    doc.text(`${index + 1}. ${piece}`, col1, doc.y, {
+      width: 500,
+      align: 'left'
+    });
+
+    doc.moveDown(0.3);
   });
 
-  doc.moveDown(2);
+  doc.moveDown(1.5);
+
+  // Vérifier s'il faut une nouvelle page pour le financeur
+  if (doc.y > 700) {
+    doc.addPage();
+  }
 
   // Financeur
   if (aide.financers && aide.financers.length > 0) {
@@ -180,20 +260,24 @@ async function genererDossierPDF(params) {
     doc.moveDown(0.5);
     doc.fontSize(10)
        .fillColor('#000000')
-       .text(aide.financers[0]);
+       .text(aide.financers[0], col1);
 
     doc.moveDown(1);
   }
 
   // Pied de page
-  doc.fontSize(8)
-     .fillColor('#666666')
-     .text(
-       `Document généré par Granto.ai le ${new Date().toLocaleDateString('fr-FR')}`,
-       50,
-       doc.page.height - 50,
-       { align: 'center' }
-     );
+  const pageCount = doc.bufferedPageRange().count;
+  for (let i = 0; i < pageCount; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(8)
+       .fillColor('#666666')
+       .text(
+         `Document généré par Granto.ai le ${new Date().toLocaleDateString('fr-FR')} - Page ${i + 1}/${pageCount}`,
+         50,
+         doc.page.height - 50,
+         { align: 'center', width: doc.page.width - 100 }
+       );
+  }
 
   // Finaliser le PDF
   doc.end();
@@ -212,6 +296,10 @@ async function genererDossierPDF(params) {
  * Formate un nombre en euros
  */
 function formatEuros(montant) {
+  if (isNaN(montant) || montant === null || montant === undefined) {
+    return '0 €';
+  }
+
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
