@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 // GET tous les projets
 router.get('/', async (req, res) => {
   try {
-    const projets = await prisma.projet.findMany({ 
-      include: { 
-        collectivite: true, 
+    const projets = await prisma.projet.findMany({
+      include: {
+        collectivite: true,
         dossiers: {
           include: { dispositif: true }
         }
@@ -26,8 +26,8 @@ router.get('/:id', async (req, res) => {
   try {
     const projet = await prisma.projet.findUnique({
       where: { id: req.params.id },
-      include: { 
-        collectivite: true, 
+      include: {
+        collectivite: true,
         dossiers: {
           include: { dispositif: true }
         }
@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
 // POST créer un projet
 router.post('/', async (req, res) => {
   try {
-    const projet = await prisma.projet.create({ 
+    const projet = await prisma.projet.create({
       data: req.body,
       include: { collectivite: true }
     });

@@ -49,66 +49,72 @@ const authenticate = async () => {
 };
 
 const searchAids = async (params = {}) => {
+  const apiParams = {
+    page: params.page || 1,
+    page_size: params.pageSize || 200
+  };
+
+  // Ajouter la recherche textuelle si présente
+  if (params.text) {
+    apiParams.text = params.text;
+  }
+
+  // Filtrer par type d'aide si spécifié
+  if (params.aid_types && params.aid_types !== 'all') {
+    apiParams.aid_types = params.aid_types;
+  }
+
+  // Filtrer par audience cible (communes, EPCI, etc.)
+  if (params.targeted_audiences) {
+    apiParams.targeted_audiences = params.targeted_audiences;
+  }
+
+  // Filtrer par catégorie thématique
+  if (params.categories && params.categories !== 'all') {
+    apiParams.categories = params.categories;
+  }
+
+  // Filtrer par périmètre géographique (code INSEE ou nom)
+  if (params.perimeter) {
+    apiParams.perimeter = params.perimeter;
+  }
+
+  // Construire les headers (l'API publique fonctionne sans authentification)
+  const headers = {};
+  if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`;
+  }
+
   try {
-    // S'assurer qu'on est authentifié
-    if (!bearerToken || !isAuthenticated) {
-      await authenticate();
+    // Tenter l'authentification si une clé API est configurée
+    if (API_KEY && (!bearerToken || !isAuthenticated)) {
+      try {
+        await authenticate();
+        if (bearerToken) {
+          headers['Authorization'] = `Bearer ${bearerToken}`;
+        }
+      } catch (authError) {
+        console.warn('⚠️ Authentification échouée, requête sans token:', authError.message);
+      }
     }
 
-    const apiParams = {
-      page: params.page || 1,
-      page_size: params.pageSize || 200 // Augmenté pour avoir plus de résultats
-    };
-
-    // Ajouter la recherche textuelle si présente
-    if (params.text) {
-      apiParams.text = params.text;
-    }
-
-    // Filtrer par type d'aide si spécifié
-    if (params.aid_types && params.aid_types !== 'all') {
-      apiParams.aid_types = params.aid_types;
-    }
-
-    // Filtrer par audience cible (communes, EPCI, etc.)
-    if (params.targeted_audiences) {
-      apiParams.targeted_audiences = params.targeted_audiences;
-    }
-
-    // Filtrer par catégorie thématique
-    if (params.categories && params.categories !== 'all') {
-      apiParams.categories = params.categories;
-    }
-
-    // Filtrer par périmètre géographique (code INSEE ou nom)
-    if (params.perimeter) {
-      apiParams.perimeter = params.perimeter;
-    }
-
-    console.log('🔍 Recherche avec Bearer token, params:', apiParams);
+    console.log('🔍 Recherche aides, params:', apiParams, bearerToken ? '(avec token)' : '(sans token)');
 
     const response = await axios.get(`${API_BASE_URL}/aids/`, {
       params: apiParams,
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`
-      }
+      headers
     });
 
     return response.data;
   } catch (error) {
-    // Si erreur 401, réessayer avec une nouvelle authentification
+    // Si erreur 401, réessayer SANS le header Authorization
     if (error.response?.status === 401) {
-      console.log('🔄 Token expiré, réauthentification...');
+      console.log('🔄 Erreur 401, réessai sans authentification...');
       isAuthenticated = false;
       bearerToken = null;
-      await authenticate();
 
-      // Réessayer la requête
       const response = await axios.get(`${API_BASE_URL}/aids/`, {
-        params: apiParams,
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`
-        }
+        params: apiParams
       });
       return response.data;
     }
@@ -119,19 +125,33 @@ const searchAids = async (params = {}) => {
 };
 
 const getAidDetails = async (slug) => {
-  try {
-    if (!bearerToken || !isAuthenticated) {
-      await authenticate();
-    }
+  const headers = {};
 
-    const response = await axios.get(`${API_BASE_URL}/aids/${slug}/`, {
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`
-      }
-    });
-    
+  // Tenter l'authentification si une clé API est configurée
+  if (API_KEY && (!bearerToken || !isAuthenticated)) {
+    try {
+      await authenticate();
+    } catch (authError) {
+      console.warn('⚠️ Authentification échouée pour détails aide:', authError.message);
+    }
+  }
+
+  if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`;
+  }
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/aids/${slug}/`, { headers });
     return response.data;
   } catch (error) {
+    // Si 401, réessayer sans token
+    if (error.response?.status === 401 && bearerToken) {
+      console.log('🔄 Erreur 401 détails aide, réessai sans token...');
+      isAuthenticated = false;
+      bearerToken = null;
+      const response = await axios.get(`${API_BASE_URL}/aids/${slug}/`);
+      return response.data;
+    }
     console.error('❌ Erreur détails aide:', error.response?.status, error.message);
     throw error;
   }

@@ -322,8 +322,14 @@ export function GrantSearch() {
     setAddingToProject(projectId)
 
     try {
-      // Construire l'URL du dispositif
-      const dispositifUrl = selectedDispositif.url || `https://aides-territoires.beta.gouv.fr/aides/${selectedDispositif.slug}/`
+      // Construire l'URL du dispositif (toujours utiliser l'URL externe absolue)
+      const baseUrl = 'https://aides-territoires.beta.gouv.fr'
+      let dispositifUrl = selectedDispositif.external_url || selectedDispositif.url || ''
+      if (!dispositifUrl.startsWith('http')) {
+        dispositifUrl = selectedDispositif.slug
+          ? `${baseUrl}/aides/${selectedDispositif.slug}/`
+          : `${baseUrl}${dispositifUrl}`
+      }
 
       // 1. D'abord créer ou récupérer le dispositif
       const dispositifResponse = await fetch('/api/dispositifs', {

@@ -137,6 +137,13 @@ export default function DossierDetailPage() {
     return statutOptions.find(s => s.value === statutValue) || statutOptions[0]
   }
 
+  // Assurer que l'URL du dispositif est toujours absolue
+  const getDispositifUrl = (url: string) => {
+    if (!url) return ''
+    if (url.startsWith('http')) return url
+    return `https://aides-territoires.beta.gouv.fr${url.startsWith('/') ? '' : '/aides/'}${url}`
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -240,7 +247,7 @@ export default function DossierDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(dossier.dispositif.url, '_blank')}
+                    onClick={() => window.open(getDispositifUrl(dossier.dispositif.url), '_blank', 'noopener,noreferrer')}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Voir le dispositif
@@ -439,7 +446,7 @@ export default function DossierDetailPage() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => window.open(dossier.dispositif.url, '_blank')}
+                  onClick={() => window.open(getDispositifUrl(dossier.dispositif.url), '_blank', 'noopener,noreferrer')}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Voir sur Aides-Territoires

@@ -252,7 +252,7 @@ export default function DispositifDetailPage() {
                   <div>
                     <p className="text-sm font-medium text-slate-900">Plus d'informations</p>
                     <a
-                      href={dispositif.url}
+                      href={dispositif.url?.startsWith('http') ? dispositif.url : `https://aides-territoires.beta.gouv.fr${dispositif.url?.startsWith('/') ? '' : '/aides/'}${dispositif.url}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline"
