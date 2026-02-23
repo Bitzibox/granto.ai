@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { analyzeProject, explainMatch } = require('../services/geminiService');
 const { searchAids } = require('../services/aidesTerritoires');
+const { identifierCommune, estEligibleGeographiquement } = require('../services/geoService');
+const { genererDossierPDF } = require('../services/pdfService');
 
 // Départements Sarthe et Pays de la Loire
 const SARTHE_DEPTS = ['72', 'sarthe', 'saint-mars', 'le mans', 'mans'];
@@ -23,11 +25,21 @@ router.post('/analyze', async (req, res) => {
 
     console.log(`🤖 Analyse IA: ${description} - ${commune} - ${budget}€`);
 
-    // 1. Analyser le projet avec Gemini
+    // 1. Identifier la commune (département et région)
+    let communeInfo;
+    try {
+      communeInfo = await identifierCommune(commune);
+      console.log(`📍 Commune: ${communeInfo.nom} - Dept: ${communeInfo.departement} - Région: ${communeInfo.region}`);
+    } catch (error) {
+      console.warn(`⚠️ Impossible d'identifier la commune ${commune}, on continue sans filtrage géo`);
+      communeInfo = { departement: null, region: null };
+    }
+
+    // 2. Analyser le projet avec Gemini
     const analysis = await analyzeProject(description, commune, budget);
     console.log('📊 Analyse Gemini:', analysis);
 
-    // 2. Rechercher les aides correspondantes
+    // 3. Rechercher les aides correspondantes
     const searchParams = {
       text: analysis.mots_cles.join(' '),
       targeted_audiences: 'commune',
@@ -37,9 +49,26 @@ router.post('/analyze', async (req, res) => {
     const aidesData = await searchAids(searchParams);
     let aides = aidesData.results || [];
 
-    console.log(`📦 ${aides.length} aides trouvées`);
+    console.log(`📦 ${aides.length} aides trouvées avant filtrage géographique`);
 
-    // 3. Filtrer et scorer les aides
+    // 4. FILTRAGE GÉOGRAPHIQUE - Ne garder que les aides éligibles
+    if (communeInfo.departement) {
+      aides = aides.filter(aide => {
+        const eligible = estEligibleGeographiquement(
+          aide.perimeter,
+          communeInfo.departement,
+          communeInfo.region
+        );
+        if (!eligible) {
+          console.log(`❌ Rejeté (hors zone): ${aide.name} - Périmètre: ${aide.perimeter}`);
+        }
+        return eligible;
+      });
+
+      console.log(`✅ ${aides.length} aides éligibles après filtrage géographique`);
+    }
+
+    // 5. Filtrer et scorer les aides
     const aidesAvecScores = await Promise.all(
       aides.map(async (aide) => {
         let score = 0;
@@ -114,14 +143,63 @@ router.post('/analyze', async (req, res) => {
     res.json({
       success: true,
       analysis,
+      commune: communeInfo,
       aides: top3,
-      total_found: aides.length
+      total_found: aides.length,
+      total_eligible: aides.length
     });
 
   } catch (error) {
     console.error('❌ Erreur analyse IA:', error);
     res.status(500).json({
       error: error.message || 'Erreur lors de l\'analyse IA'
+    });
+  }
+});
+
+/**
+ * POST /api/assistant-ia/generate-pdf
+ * Génère un dossier de subvention en PDF
+ */
+router.post('/generate-pdf', async (req, res) => {
+  try {
+    const { aide, commune, analysis, collectivite } = req.body;
+
+    if (!aide || !commune || !analysis) {
+      return res.status(400).json({
+        error: 'Paramètres manquants pour la génération PDF'
+      });
+    }
+
+    console.log(`📄 Génération PDF pour aide: ${aide.name}`);
+
+    // Générer le PDF
+    const pdfBuffer = await genererDossierPDF({
+      projet: {
+        description: analysis.description_enrichie,
+        budget: analysis.montant_estime
+      },
+      aide,
+      commune,
+      collectivite: collectivite || commune.nom,
+      analysis
+    });
+
+    // Nom de fichier sécurisé
+    const filename = `Dossier_${aide.slug || 'subvention'}_${Date.now()}.pdf`;
+
+    // Envoyer le PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+
+    console.log(`✅ PDF généré: ${filename} (${pdfBuffer.length} bytes)`);
+
+  } catch (error) {
+    console.error('❌ Erreur génération PDF:', error);
+    res.status(500).json({
+      error: error.message || 'Erreur lors de la génération du PDF'
     });
   }
 });

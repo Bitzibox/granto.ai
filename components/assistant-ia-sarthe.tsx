@@ -15,6 +15,7 @@ export function AssistantIASarthe() {
   const [loading, setLoading] = useState(false)
   const [resultats, setResultats] = useState<any>(null)
   const [error, setError] = useState('')
+  const [generatingPdf, setGeneratingPdf] = useState<string | null>(null)
 
   const handleAnalyse = async () => {
     if (!description.trim() || !commune.trim() || !budget) {
@@ -49,6 +50,47 @@ export function AssistantIASarthe() {
       setError(err.message || 'Une erreur est survenue')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGeneratePdf = async (aide: any) => {
+    if (!resultats) return
+
+    setGeneratingPdf(aide.id)
+
+    try {
+      const res = await fetch('/api/assistant-ia/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aide,
+          commune: resultats.commune,
+          analysis: resultats.analysis,
+          collectivite: resultats.commune?.nom || commune
+        })
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Erreur génération PDF' }))
+        throw new Error(err.error || 'Erreur lors de la génération du PDF')
+      }
+
+      // Télécharger le PDF
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Dossier_${aide.slug || 'subvention'}_${Date.now()}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+    } catch (err: any) {
+      console.error('Erreur PDF:', err)
+      alert(err.message || 'Erreur lors de la génération du PDF')
+    } finally {
+      setGeneratingPdf(null)
     }
   }
 
@@ -227,13 +269,20 @@ export function AssistantIASarthe() {
                               variant="default"
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700"
-                              onClick={() => {
-                                // TODO: Générer PDF
-                                alert('Génération PDF bientôt disponible')
-                              }}
+                              onClick={() => handleGeneratePdf(aide)}
+                              disabled={generatingPdf === aide.id}
                             >
-                              <Download className="h-4 w-4 mr-1" />
-                              Télécharger dossier
+                              {generatingPdf === aide.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  Génération...
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Télécharger dossier
+                                </>
+                              )}
                             </Button>
                           </div>
                         </div>
@@ -256,13 +305,20 @@ export function AssistantIASarthe() {
                   <Button
                     size="lg"
                     className="bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      // TODO: Générer PDF complet
-                      alert('Génération PDF complet bientôt disponible')
-                    }}
+                    onClick={() => handleGeneratePdf(resultats.aides[0])}
+                    disabled={generatingPdf !== null}
                   >
-                    <Download className="h-5 w-5 mr-2" />
-                    Télécharger le dossier complet (PDF)
+                    {generatingPdf ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Génération en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-5 w-5 mr-2" />
+                        Télécharger le dossier complet (PDF)
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
