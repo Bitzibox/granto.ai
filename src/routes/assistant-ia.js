@@ -68,84 +68,117 @@ router.post('/analyze', async (req, res) => {
       console.log(`✅ ${aides.length} aides éligibles après filtrage géographique`);
     }
 
-    // 5. Filtrer et scorer les aides
+    // 5. Filtrer et scorer les aides avec scoring amélioré
     const aidesAvecScores = await Promise.all(
       aides.map(async (aide) => {
         let score = 0;
         const perimeter = (aide.perimeter || '').toLowerCase();
         const name = (aide.name || '').toLowerCase();
         const description = (aide.description || '').toLowerCase();
+        const fullText = `${name} ${description}`;
 
-        // Scoring prioritaire Sarthe
-        if (SARTHE_DEPTS.some(d => perimeter.includes(d) || name.includes(d))) {
-          score += 50; // Priorité maximale Sarthe
+        // 1. Scoring géographique prioritaire (40 points max)
+        if (communeInfo.departement && perimeter.includes(communeInfo.departement)) {
+          score += 40; // Même département - priorité maximale
+        } else if (SARTHE_DEPTS.some(d => perimeter.includes(d) || name.includes(d))) {
+          score += 35; // Sarthe spécifiquement
         } else if (PAYS_LOIRE_DEPTS.some(d => perimeter.includes(d))) {
-          score += 30; // Pays de la Loire
+          score += 25; // Pays de la Loire
         } else if (perimeter.includes('france') && !perimeter.includes('île')) {
-          score += 20; // National
-        } else {
-          score += 5; // Autres
+          score += 15; // National
         }
 
-        // Score basé sur catégorie
-        if (name.includes(analysis.categorie_principale) ||
-            description.includes(analysis.categorie_principale)) {
-          score += 25;
+        // 2. DETR/DSIL bonus (30 points max) - très important pour communes
+        if ((name.includes('detr') || name.includes('dsil')) &&
+            (analysis.eligibilite_detr || analysis.eligibilite_dsil)) {
+          score += 30;
         }
 
-        // Score basé sur mots-clés
+        // 3. Score basé sur catégorie principale (20 points)
+        if (fullText.includes(analysis.categorie_principale)) {
+          score += 20;
+        }
+
+        // 4. Score basé sur mots-clés (max 30 points - 6 points par mot-clé trouvé)
+        let motsClesTouves = 0;
         analysis.mots_cles.forEach(mot => {
-          if (name.includes(mot) || description.includes(mot)) {
-            score += 10;
+          if (fullText.includes(mot.toLowerCase())) {
+            motsClesTouves++;
+            score += 6;
           }
         });
 
-        // DETR/DSIL bonus
-        if ((name.includes('detr') || name.includes('dsil')) &&
-            (analysis.eligibilite_detr || analysis.eligibilite_dsil)) {
-          score += 40;
-        }
-
-        // Montant compatible
-        if (aide.subvention_rate_lower_bound && aide.subvention_rate_upper_bound) {
-          const montantMin = aide.subvention_rate_lower_bound * analysis.montant_estime / 100;
-          const montantMax = aide.subvention_rate_upper_bound * analysis.montant_estime / 100;
-          if (montantMin <= analysis.montant_estime && montantMax >= analysis.montant_estime * 0.3) {
+        // 5. Taux de subvention élevé (15 points max)
+        if (aide.subvention_rate_upper_bound) {
+          if (aide.subvention_rate_upper_bound >= 80) {
             score += 15;
+          } else if (aide.subvention_rate_upper_bound >= 60) {
+            score += 10;
+          } else if (aide.subvention_rate_upper_bound >= 40) {
+            score += 5;
           }
         }
 
-        // Générer explication du match
-        let explication = '';
-        try {
-          explication = await explainMatch(analysis, aide);
-        } catch (err) {
-          console.warn('Erreur génération explication:', err.message);
-          explication = `Cette aide est adaptée à votre projet de ${analysis.categorie_principale}.`;
+        // 6. Bonus si le budget est dans la fourchette (10 points)
+        if (aide.subvention_rate_lower_bound && aide.subvention_rate_upper_bound) {
+          const subventionEstimee = (aide.subvention_rate_lower_bound + aide.subvention_rate_upper_bound) / 200 * analysis.montant_estime;
+          if (subventionEstimee >= analysis.montant_estime * 0.3) {
+            score += 10;
+          }
         }
+
+        // Normaliser le score sur 100
+        const scoreNormalise = Math.min(100, Math.round(score));
+
+        // Générer explication du match SEULEMENT pour le top 3 (optimisation)
+        let explication = '';
 
         return {
           ...aide,
-          score,
-          explication,
-          external_url: `https://aides-territoires.beta.gouv.fr/aides/${aide.slug}/`
+          score: scoreNormalise,
+          explication, // Vide pour l'instant, sera rempli pour top 3
+          external_url: `https://aides-territoires.beta.gouv.fr/aides/${aide.slug}/`,
+          mots_cles_matches: motsClesTouves
         };
       })
     );
 
-    // 4. Trier par score et prendre top 3
-    const top3 = aidesAvecScores
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+    // 6. Trier TOUS les résultats par score décroissant
+    const aidesSortees = aidesAvecScores.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // En cas d'égalité, prioriser par nombre de mots-clés matchés
+      return b.mots_cles_matches - a.mots_cles_matches;
+    });
+
+    // 7. Générer les explications IA UNIQUEMENT pour le top 3 (pour la performance)
+    const top3 = aidesSortees.slice(0, 3);
+    for (const aide of top3) {
+      try {
+        aide.explication = await explainMatch(analysis, aide);
+      } catch (err) {
+        console.warn('Erreur génération explication:', err.message);
+        aide.explication = `Cette aide est adaptée à votre projet de ${analysis.categorie_principale}.`;
+      }
+    }
+
+    // 8. Pour les autres, explication générique simple
+    const autresAides = aidesSortees.slice(3);
+    for (const aide of autresAides) {
+      aide.explication = `Aide ${aide.score >= 60 ? 'pertinente' : 'possible'} pour votre projet.`;
+    }
 
     console.log(`✅ Top 3 aides avec scores:`, top3.map(a => ({ nom: a.name, score: a.score })));
+    console.log(`📋 Total aides retournées: ${aidesSortees.length}`);
 
     res.json({
       success: true,
       analysis,
       commune: communeInfo,
       aides: top3,
-      total_found: aides.length,
+      autres_aides: autresAides,
+      total_found: aidesSortees.length,
       total_eligible: aides.length
     });
 

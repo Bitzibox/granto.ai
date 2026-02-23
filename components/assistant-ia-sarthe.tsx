@@ -292,6 +292,65 @@ export function AssistantIASarthe() {
                 ))}
               </div>
 
+              {/* Autres aides disponibles */}
+              {resultats.autres_aides && resultats.autres_aides.length > 0 && (
+                <div className="mt-8 pt-6 border-t">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                    📋 Autres aides disponibles ({resultats.autres_aides.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {resultats.autres_aides.map((aide: any, index: number) => (
+                      <Card key={aide.id} className="border hover:shadow-sm transition-shadow">
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              <Badge className={`${getScoreColor(aide.score)}`}>
+                                {aide.score}%
+                              </Badge>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-slate-900 text-sm mb-1">
+                                {aide.name}
+                              </h4>
+                              <p className="text-xs text-slate-600 mb-2">
+                                {aide.financers?.[0] || 'Non spécifié'} • {aide.perimeter}
+                              </p>
+
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                  onClick={() => window.open(aide.external_url, '_blank')}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Détails
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-7 text-xs bg-slate-600 hover:bg-slate-700"
+                                  onClick={() => handleGeneratePdf(aide)}
+                                  disabled={generatingPdf === aide.id}
+                                >
+                                  {generatingPdf === aide.id ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Download className="h-3 w-3 mr-1" />
+                                  )}
+                                  PDF
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* CTA Global */}
               <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
                 <CardContent className="p-6 text-center">

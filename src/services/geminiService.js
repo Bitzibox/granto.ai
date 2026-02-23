@@ -21,7 +21,14 @@ async function analyzeProject(description, commune, budget) {
     throw new Error('Gemini API non configurée');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash-exp',
+    generationConfig: {
+      temperature: 0,  // Résultats déterministes
+      topP: 0.1,
+      topK: 1
+    }
+  });
 
   const prompt = `Tu es un expert en subventions publiques pour les collectivités territoriales de la Sarthe (Pays de la Loire).
 

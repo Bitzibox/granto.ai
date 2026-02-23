@@ -192,7 +192,12 @@ async function genererDossierPDF(params) {
 
   doc.y = tableTop + 90; // Position après le tableau
 
-  // Calendrier
+  // Vérifier s'il faut une nouvelle page AVANT le calendrier
+  if (doc.y > 620) {
+    doc.addPage();
+  }
+
+  // Calendrier - utiliser le flux normal sans positions absolues
   doc.fontSize(12)
      .fillColor('#1e40af')
      .text('4. CALENDRIER PRÉVISIONNEL', { underline: true });
@@ -201,20 +206,16 @@ async function genererDossierPDF(params) {
   doc.fontSize(10)
      .fillColor('#000000');
 
-  const calTop = doc.y;
-  doc.text('Début des travaux :', col1, calTop);
-  doc.text(contenu.calendrier.debut, 250, calTop);
+  // Utiliser un tableau simple sans positions absolues
+  doc.text(`Début des travaux :         ${contenu.calendrier.debut}`, col1);
+  doc.moveDown(0.3);
+  doc.text(`Durée prévisionnelle :      ${contenu.calendrier.duree}`, col1);
+  doc.moveDown(0.3);
+  doc.text(`Fin des travaux :           ${contenu.calendrier.fin}`, col1);
 
-  doc.text('Durée prévisionnelle :', col1, calTop + 20);
-  doc.text(contenu.calendrier.duree, 250, calTop + 20);
+  doc.moveDown(1.5);
 
-  doc.text('Fin des travaux :', col1, calTop + 40);
-  doc.text(contenu.calendrier.fin, 250, calTop + 40);
-
-  doc.y = calTop + 60;
-  doc.moveDown(1);
-
-  // Vérifier s'il faut une nouvelle page
+  // Vérifier s'il faut une nouvelle page AVANT les pièces
   if (doc.y > 650) {
     doc.addPage();
   }
