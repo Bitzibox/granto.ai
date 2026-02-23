@@ -1,6 +1,7 @@
 'use client'
 
 import { AssistantIASarthe } from '@/components/assistant-ia-sarthe'
+import { Suspense } from 'react'
 import { GrantSearch } from '@/components/grant-search'
 
 export default function RechercheSubventionsPage() {
@@ -22,7 +23,9 @@ export default function RechercheSubventionsPage() {
       </div>
 
       {/* Recherche manuelle - EN BAS (option alternative) */}
-      <GrantSearch />
+      <Suspense fallback={<div>Chargement de la recherche...</div>}>
+        <GrantSearch />
+      </Suspense>
     </div>
   )
 }
