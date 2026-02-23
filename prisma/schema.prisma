@@ -97,13 +97,86 @@ model User {
   prenom          String
   role            String    @default("user")
   // Rôles possibles: admin, manager, user
-  
+
   collectiviteId  String?
   collectivite    Collectivite? @relation(fields: [collectiviteId], references: [id], onDelete: SetNull)
-  
+
   lastLogin       DateTime?
   isActive        Boolean   @default(true)
-  
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  pdfTemplates    PdfTemplate[]
+}
+
+model PdfTemplate {
+  id              String    @id @default(uuid())
+  nom             String
+  description     String?
+
+  // Propriétaire du template
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collectiviteId  String?
+
+  // Template par défaut
+  isDefault       Boolean   @default(false)
+  isPublic        Boolean   @default(false)
+
+  // === CONFIGURATION VISUELLE ===
+
+  // Logo
+  logoUrl         String?
+  logoPosition    String    @default("header-left") // header-left, header-center, header-right
+  logoWidth       Int       @default(150) // en pixels
+  logoHeight      Int       @default(50)
+
+  // Polices
+  fontFamily      String    @default("Helvetica")
+  fontSize        Int       @default(10)
+  fontSizeTitle   Int       @default(20)
+  fontSizeHeading Int       @default(12)
+
+  // Couleurs (format hex)
+  colorPrimary    String    @default("#1e40af") // Bleu principal
+  colorSecondary  String    @default("#000000") // Noir texte
+  colorAccent     String    @default("#64748b") // Gris
+
+  // Marges (en points PDF)
+  marginTop       Int       @default(50)
+  marginBottom    Int       @default(50)
+  marginLeft      Int       @default(50)
+  marginRight     Int       @default(50)
+
+  // En-tête et pied de page
+  headerText      String?
+  headerAlign     String    @default("center") // left, center, right
+  footerText      String    @default("Document généré par Granto.ai")
+  footerAlign     String    @default("center")
+  showPageNumbers Boolean   @default(false)
+
+  // === CONFIGURATION STRUCTURELLE ===
+
+  // Ordre des sections (JSON array)
+  // Exemple: ["collectivite", "contexte", "description", "financement", "calendrier", "pieces", "financeur"]
+  sectionsOrder   Json      @default("[\"collectivite\",\"contexte\",\"description\",\"financement\",\"calendrier\",\"pieces\",\"financeur\"]")
+
+  // Sections activées/désactivées
+  sectionsEnabled Json      @default("{\"collectivite\":true,\"contexte\":true,\"description\":true,\"financement\":true,\"calendrier\":true,\"pieces\":true,\"financeur\":true}")
+
+  // Configuration par section (JSON)
+  // Exemple: {"contexte": {"title": "1. CONTEXTE COMMUNAL", "fontSize": 12}, ...}
+  sectionsConfig  Json      @default("{}")
+
+  // === MÉTADONNÉES ===
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastUsedAt      DateTime?
+  usageCount      Int       @default(0)
+
+  @@index([userId])
+  @@index([collectiviteId])
+  @@index([isDefault])
 }
