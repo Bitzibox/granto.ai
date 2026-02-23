@@ -53,6 +53,10 @@ app.use('/api/aides-territoires', aidesTerritoriesRouter);
 const assistantIARouter = require('./routes/assistant-ia');
 app.use('/api/assistant-ia', assistantIARouter);
 
+// Routes Templates PDF
+const pdfTemplatesRouter = require('./routes/pdf-templates');
+app.use('/api/pdf-templates', pdfTemplatesRouter);
+
 // Gestion des erreurs 404
 app.use((req, res) => {
   res.status(404).json({

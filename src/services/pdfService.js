@@ -6,11 +6,49 @@ const PDFDocument = require('pdfkit');
 const { generateDossierContent } = require('./geminiService');
 
 /**
+ * Template par défaut si aucun template fourni
+ */
+const DEFAULT_TEMPLATE = {
+  fontFamily: 'Helvetica',
+  fontSize: 10,
+  fontSizeTitle: 20,
+  fontSizeHeading: 12,
+  colorPrimary: '#1e40af',
+  colorSecondary: '#000000',
+  colorAccent: '#64748b',
+  marginTop: 50,
+  marginBottom: 50,
+  marginLeft: 50,
+  marginRight: 50,
+  headerText: null,
+  headerAlign: 'center',
+  footerText: 'Document généré par Granto.ai',
+  footerAlign: 'center',
+  logoUrl: null,
+  logoPosition: 'header-left',
+  logoWidth: 150,
+  logoHeight: 50,
+  showPageNumbers: false,
+  sectionsOrder: ['collectivite', 'contexte', 'description', 'financement', 'calendrier', 'pieces', 'financeur'],
+  sectionsEnabled: {
+    collectivite: true,
+    contexte: true,
+    description: true,
+    financement: true,
+    calendrier: true,
+    pieces: true,
+    financeur: true
+  },
+  sectionsConfig: {}
+};
+
+/**
  * Génère un PDF de dossier de subvention
  * @param {Object} params - Paramètres du dossier
+ * @param {Object} templateConfig - Configuration du template (optionnel)
  * @returns {Promise<Buffer>} - PDF en buffer
  */
-async function genererDossierPDF(params) {
+async function genererDossierPDF(params, templateConfig = null) {
   const {
     projet,
     aide,
@@ -18,6 +56,9 @@ async function genererDossierPDF(params) {
     collectivite,
     analysis
   } = params;
+
+  // Fusionner template personnalisé avec le défaut
+  const tpl = { ...DEFAULT_TEMPLATE, ...templateConfig };
 
   // Calculer le plan de financement depuis les données de l'aide
   const budget = analysis.montant_estime || projet.budget || 0;
@@ -43,10 +84,15 @@ async function genererDossierPDF(params) {
     return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
   };
 
-  // Créer un nouveau document PDF
+  // Créer un nouveau document PDF avec marges du template
   const doc = new PDFDocument({
     size: 'A4',
-    margins: { top: 50, bottom: 50, left: 50, right: 50 }
+    margins: {
+      top: tpl.marginTop,
+      bottom: tpl.marginBottom,
+      left: tpl.marginLeft,
+      right: tpl.marginRight
+    }
   });
 
   // Buffer pour stocker le PDF
@@ -109,174 +155,166 @@ async function genererDossierPDF(params) {
     ];
   }
 
-  // En-tête
-  doc.fontSize(20)
-     .fillColor('#1e40af')
+  // === Raccourcis template ===
+  const col1 = tpl.marginLeft;
+  const contentWidth = doc.page.width - tpl.marginLeft - tpl.marginRight;
+  const col2 = tpl.marginLeft + contentWidth - 150;
+
+  // Fonction helper: vérifier saut de page
+  const checkPageBreak = (minSpace = 100) => {
+    if (doc.y > doc.page.height - tpl.marginBottom - minSpace) {
+      doc.addPage();
+    }
+  };
+
+  // Fonction helper: titre de section
+  const sectionTitle = (title) => {
+    checkPageBreak(80);
+    doc.fontSize(tpl.fontSizeHeading)
+       .fillColor(tpl.colorPrimary)
+       .text(title, { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(tpl.fontSize)
+       .fillColor(tpl.colorSecondary);
+  };
+
+  // === EN-TÊTE PERSONNALISÉ ===
+  if (tpl.headerText) {
+    doc.fontSize(8)
+       .fillColor(tpl.colorAccent)
+       .text(tpl.headerText, { align: tpl.headerAlign });
+    doc.moveDown(1);
+  }
+
+  // === TITRE PRINCIPAL ===
+  doc.fontSize(tpl.fontSizeTitle)
+     .fillColor(tpl.colorPrimary)
      .text('DEMANDE DE SUBVENTION', { align: 'center' });
 
   doc.moveDown();
   doc.fontSize(14)
-     .fillColor('#000000')
+     .fillColor(tpl.colorSecondary)
      .text(aide.name, { align: 'center' });
 
   doc.moveDown(2);
 
-  // Informations collectivité
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('COLLECTIVITÉ', { underline: true });
+  // === SECTIONS DANS L'ORDRE DU TEMPLATE ===
+  const sectionsOrder = Array.isArray(tpl.sectionsOrder) ? tpl.sectionsOrder : DEFAULT_TEMPLATE.sectionsOrder;
+  const sectionsEnabled = typeof tpl.sectionsEnabled === 'object' && tpl.sectionsEnabled !== null
+    ? tpl.sectionsEnabled
+    : DEFAULT_TEMPLATE.sectionsEnabled;
 
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#000000')
-     .text(`Commune : ${commune.nom}`)
-     .text(`Département : ${commune.departement} - ${commune.region}`)
-     .text(`Code postal : ${commune.codePostal || ''}`);
+  let sectionNumber = 0;
 
-  doc.moveDown(1.5);
+  for (const sectionKey of sectionsOrder) {
+    if (!sectionsEnabled[sectionKey]) continue;
+    sectionNumber++;
 
-  // Contexte communal
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('1. CONTEXTE ET ENJEUX', { underline: true });
+    const sectionConf = (tpl.sectionsConfig && tpl.sectionsConfig[sectionKey]) || {};
 
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#000000')
-     .text(contenu.contexte, { align: 'justify' });
+    switch (sectionKey) {
+      case 'collectivite': {
+        sectionTitle(sectionConf.title || 'COLLECTIVITÉ');
+        doc.text(`Commune : ${commune.nom}`)
+           .text(`Département : ${commune.departement} - ${commune.region}`)
+           .text(`Code postal : ${commune.codePostal || ''}`);
+        doc.moveDown(1.5);
+        break;
+      }
 
-  doc.moveDown(1.5);
+      case 'contexte': {
+        sectionTitle(sectionConf.title || `${sectionNumber}. CONTEXTE ET ENJEUX`);
+        doc.text(contenu.contexte, { align: 'justify' });
+        doc.moveDown(1.5);
+        break;
+      }
 
-  // Description du projet
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('2. DESCRIPTION DU PROJET', { underline: true });
+      case 'description': {
+        sectionTitle(sectionConf.title || `${sectionNumber}. DESCRIPTION DU PROJET`);
+        doc.text(contenu.description, { align: 'justify' });
+        doc.moveDown(1.5);
+        break;
+      }
 
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#000000')
-     .text(contenu.description, { align: 'justify' });
+      case 'financement': {
+        sectionTitle(sectionConf.title || `${sectionNumber}. PLAN DE FINANCEMENT`);
 
-  doc.moveDown(1.5);
+        const tableTop = doc.y;
 
-  // Plan de financement
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('3. PLAN DE FINANCEMENT', { underline: true });
+        doc.text('Coût total HT', col1, tableTop);
+        doc.text(formatEuros(contenu.plan_financement.cout_total_ht), col2, tableTop, { width: 150, align: 'right' });
 
-  doc.moveDown(0.5);
+        doc.text('Subvention sollicitée', col1, tableTop + 20);
+        doc.text(formatEuros(contenu.plan_financement.subvention), col2, tableTop + 20, { width: 150, align: 'right' });
 
-  const tableTop = doc.y;
-  const col1 = 50;
-  const col2 = 400;
+        doc.text('Autofinancement', col1, tableTop + 40);
+        doc.text(formatEuros(contenu.plan_financement.autofinancement), col2, tableTop + 40, { width: 150, align: 'right' });
 
-  doc.fontSize(10).fillColor('#000000');
+        doc.moveTo(col1, tableTop + 55)
+           .lineTo(col2 + 150, tableTop + 55)
+           .stroke();
 
-  // Lignes du tableau
-  doc.text('Coût total HT', col1, tableTop);
-  doc.text(formatEuros(contenu.plan_financement.cout_total_ht), col2, tableTop, { width: 150, align: 'right' });
+        doc.text('Taux de subvention', col1, tableTop + 65);
+        doc.text(`${tauxPourcent} %`, col2, tableTop + 65, { width: 150, align: 'right' });
 
-  doc.text('Subvention sollicitée', col1, tableTop + 20);
-  doc.text(formatEuros(contenu.plan_financement.subvention), col2, tableTop + 20, { width: 150, align: 'right' });
+        doc.y = tableTop + 90;
+        break;
+      }
 
-  doc.text('Autofinancement', col1, tableTop + 40);
-  doc.text(formatEuros(contenu.plan_financement.autofinancement), col2, tableTop + 40, { width: 150, align: 'right' });
+      case 'calendrier': {
+        checkPageBreak(100);
+        sectionTitle(sectionConf.title || `${sectionNumber}. CALENDRIER PRÉVISIONNEL`);
 
-  // Ligne de séparation
-  doc.moveTo(col1, tableTop + 55)
-     .lineTo(col2 + 150, tableTop + 55)
-     .stroke();
+        doc.text(`Début des travaux :         ${contenu.calendrier.debut}`, col1);
+        doc.moveDown(0.3);
+        doc.text(`Durée prévisionnelle :      ${contenu.calendrier.duree}`, col1);
+        doc.moveDown(0.3);
+        doc.text(`Fin des travaux :           ${contenu.calendrier.fin}`, col1);
+        doc.moveDown(1.5);
+        break;
+      }
 
-  doc.text('Taux de subvention', col1, tableTop + 65);
-  doc.text(`${tauxPourcent} %`, col2, tableTop + 65, { width: 150, align: 'right' });
+      case 'pieces': {
+        checkPageBreak(80);
+        sectionTitle(sectionConf.title || `${sectionNumber}. PIÈCES JUSTIFICATIVES À FOURNIR`);
 
-  doc.y = tableTop + 90; // Position après le tableau
+        contenu.pieces_requises.forEach((piece, index) => {
+          checkPageBreak(30);
+          doc.text(`${index + 1}. ${piece}`, col1, doc.y, {
+            width: contentWidth,
+            align: 'left'
+          });
+          doc.moveDown(0.3);
+        });
 
-  // Vérifier s'il faut une nouvelle page AVANT le calendrier
-  if (doc.y > 620) {
-    doc.addPage();
-  }
+        doc.moveDown(1.5);
+        break;
+      }
 
-  // Calendrier - utiliser le flux normal sans positions absolues
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('4. CALENDRIER PRÉVISIONNEL', { underline: true });
-
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#000000');
-
-  // Utiliser un tableau simple sans positions absolues
-  doc.text(`Début des travaux :         ${contenu.calendrier.debut}`, col1);
-  doc.moveDown(0.3);
-  doc.text(`Durée prévisionnelle :      ${contenu.calendrier.duree}`, col1);
-  doc.moveDown(0.3);
-  doc.text(`Fin des travaux :           ${contenu.calendrier.fin}`, col1);
-
-  doc.moveDown(1.5);
-
-  // Vérifier s'il faut une nouvelle page AVANT les pièces
-  if (doc.y > 650) {
-    doc.addPage();
-  }
-
-  // Pièces à fournir
-  doc.fontSize(12)
-     .fillColor('#1e40af')
-     .text('5. PIÈCES JUSTIFICATIVES À FOURNIR', { underline: true });
-
-  doc.moveDown(0.5);
-  doc.fontSize(10)
-     .fillColor('#000000');
-
-  contenu.pieces_requises.forEach((piece, index) => {
-    const y = doc.y;
-
-    // Nouvelle page si besoin
-    if (y > 700) {
-      doc.addPage();
+      case 'financeur': {
+        if (aide.financers && aide.financers.length > 0) {
+          checkPageBreak(60);
+          sectionTitle(sectionConf.title || 'FINANCEUR');
+          doc.text(aide.financers[0], col1);
+          doc.moveDown(1);
+        }
+        break;
+      }
     }
-
-    doc.text(`${index + 1}. ${piece}`, col1, doc.y, {
-      width: 500,
-      align: 'left'
-    });
-
-    doc.moveDown(0.3);
-  });
-
-  doc.moveDown(1.5);
-
-  // Vérifier s'il faut une nouvelle page pour le financeur
-  if (doc.y > 700) {
-    doc.addPage();
   }
 
-  // Financeur
-  if (aide.financers && aide.financers.length > 0) {
-    doc.fontSize(12)
-       .fillColor('#1e40af')
-       .text('FINANCEUR', { underline: true });
-
-    doc.moveDown(0.5);
-    doc.fontSize(10)
-       .fillColor('#000000')
-       .text(aide.financers[0], col1);
-
-    doc.moveDown(1);
+  // === PIED DE PAGE ===
+  if (tpl.footerText) {
+    const footerY = doc.page.height - tpl.marginBottom;
+    doc.fontSize(8)
+       .fillColor(tpl.colorAccent)
+       .text(
+         `${tpl.footerText} - ${new Date().toLocaleDateString('fr-FR')}`,
+         tpl.marginLeft,
+         footerY,
+         { align: tpl.footerAlign, width: contentWidth }
+       );
   }
-
-  // Pied de page (sur la dernière page uniquement)
-  // Position en bas de page
-  const footerY = doc.page.height - 50;
-  doc.fontSize(8)
-     .fillColor('#666666')
-     .text(
-       `Document généré par Granto.ai le ${new Date().toLocaleDateString('fr-FR')}`,
-       50,
-       footerY,
-       { align: 'center', width: doc.page.width - 100 }
-     );
 
   // Finaliser le PDF
   doc.end();
