@@ -127,10 +127,10 @@ export default function DossiersPage() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => router.push(`/dossier/${dossier.id}`)}
+                    onClick={() => router.push(`/dispositif/${dossier.dispositifId}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    Voir
+                    Voir le dispositif
                   </Button>
                   <Button
                     variant="outline"
