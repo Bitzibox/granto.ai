@@ -21,7 +21,7 @@ async function analyzeProject(description, commune, budget) {
     throw new Error('Gemini API non configurée');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
   const prompt = `Tu es un expert en subventions publiques pour les collectivités territoriales de la Sarthe (Pays de la Loire).
 
@@ -66,7 +66,7 @@ async function explainMatch(projectAnalysis, aide) {
     return `Cette aide correspond à votre projet ${projectAnalysis.categorie_principale}.`;
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
   const prompt = `Tu es un conseiller en subventions pour la Sarthe.
 
@@ -96,7 +96,7 @@ async function generateDossierContent(projectAnalysis, aide, commune, collectivi
     throw new Error('Gemini API non configurée');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
   const prompt = `Tu es un expert en montage de dossiers de subvention pour les collectivités de la Sarthe.
 
