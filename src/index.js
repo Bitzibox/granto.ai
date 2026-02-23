@@ -49,6 +49,10 @@ const aidesTerritoires = require('./services/aidesTerritoires');
 const aidesTerritoriesRouter = require('./routes/aides-territoires');
 app.use('/api/aides-territoires', aidesTerritoriesRouter);
 
+// Routes Assistant IA Sarthe
+const assistantIARouter = require('./routes/assistant-ia');
+app.use('/api/assistant-ia', assistantIARouter);
+
 // Gestion des erreurs 404
 app.use((req, res) => {
   res.status(404).json({
