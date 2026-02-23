@@ -38,13 +38,13 @@ export default function DossiersPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer ce dossier ?')) return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.')) return
     try {
       await dossiersAPI.delete(id)
       loadDossiers()
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('Erreur lors de la suppression')
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression:', error)
+      alert(`Erreur lors de la suppression: ${error.message || 'Une erreur est survenue'}`)
     }
   }
 

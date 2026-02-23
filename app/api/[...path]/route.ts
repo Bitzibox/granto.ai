@@ -89,16 +89,23 @@ export async function DELETE(
 ) {
   try {
     const path = params.path.join('/')
-    
+
     const backendUrl = `${BACKEND_URL}/api/${path}`
-    
+
+    console.log('🔄 Proxy DELETE:', backendUrl)
+
     const response = await fetch(backendUrl, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },
     })
-    
+
+    // 204 No Content n'a pas de body
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 })
+    }
+
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
   } catch (error: any) {
