@@ -108,20 +108,34 @@ router.post('/message', async (req, res) => {
       const convId = conversationId || generateId();
       let history = conversations.get(convId) || [];
 
+      // Extraire automatiquement les infos du projet de TOUT l'historique + message actuel
+      const allMessages = [...history.map(h => h.content), message].join(' ');
+      const extractedInfo = extractProjectInfo(allMessages);
+
       // Construire le prompt avec contexte
       const chatHistory = history.map(h => `${h.role}: ${h.content}`).join('\n');
+
+      // Construire un résumé des infos extraites
+      let extractedSummary = '\n📋 INFORMATIONS EXTRAITES DE LA CONVERSATION:';
+      if (extractedInfo.description) extractedSummary += `\n✅ Projet: ${extractedInfo.description}`;
+      if (extractedInfo.commune) extractedSummary += `\n✅ Commune: ${extractedInfo.commune}`;
+      if (extractedInfo.budget) extractedSummary += `\n✅ Budget: ${extractedInfo.budget}€`;
+
+      if (extractedInfo.description && extractedInfo.commune && extractedInfo.budget) {
+        extractedSummary += '\n\n🎯 TOUTES LES INFOS SONT PRÉSENTES ! Génère IMMÉDIATEMENT le lien [ACTION:/recherche-subventions|Lancer l\'analyse du projet|description=' + encodeURIComponent(extractedInfo.description) + '&commune=' + encodeURIComponent(extractedInfo.commune) + '&budget=' + extractedInfo.budget + '] et confirme à l\'utilisateur.';
+      } else {
+        extractedSummary += '\n\n❓ Informations manquantes:';
+        if (!extractedInfo.description) extractedSummary += '\n- Description du projet';
+        if (!extractedInfo.commune) extractedSummary += '\n- Commune';
+        if (!extractedInfo.budget) extractedSummary += '\n- Budget';
+        extractedSummary += '\n\nDemande UNIQUEMENT les informations manquantes ci-dessus.';
+      }
 
       const prompt = `${SYSTEM_CONTEXT}
 
 ${chatHistory ? `HISTORIQUE DE CONVERSATION:\n${chatHistory}\n` : ''}
 UTILISATEUR: ${message}
-
-⚠️ AVANT DE RÉPONDRE, analyse l'HISTORIQUE complet pour identifier :
-- Description du projet (déjà mentionnée ?)
-- Commune (déjà mentionnée ?)
-- Budget (déjà mentionné ?)
-
-Si tu as les 3 infos dans l'historique, génère IMMÉDIATEMENT le lien [ACTION:/recherche-subventions|...|description=...&commune=...&budget=...] sans rien redemander.
+${extractedSummary}
 
 Réponds avec des liens cliquables [LINK:...] ou actions [ACTION:...] quand c'est pertinent.`;
 
@@ -284,6 +298,88 @@ function enrichResponseWithLinks(text) {
     text: enrichedText,
     actions: actions
   };
+}
+
+// Extraire automatiquement les informations de projet de l'historique complet
+function extractProjectInfo(fullText) {
+  const lower = fullText.toLowerCase();
+  const info = {
+    description: null,
+    commune: null,
+    budget: null
+  };
+
+  // Extraction du projet (patterns multiples - capturer l'action + l'objet)
+  const projectPatterns = [
+    // Pattern 1: "restaurer le gymnase de X" -> "restauration du gymnase"
+    /(restaur(?:er|ation)|rénov(?:er|ation)|aménag(?:er|ement)|construct(?:ion|ion de)|réhabilit(?:er|ation))\s+(?:le|la|l'|les|du|de la|d'un|d'une)?\s*([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans|avec)|$)/gi,
+    // Pattern 2: "travaux de rénovation du gymnase"
+    /travaux\s+de\s+([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans)|$)/gi,
+    // Pattern 3: simple "gymnase" si isolé
+    /(?:gymnase|école|mairie|église|parc|voirie|route|bâtiment|salle|stade|piscine|médiathèque)/gi,
+  ];
+
+  for (const pattern of projectPatterns) {
+    const matches = [...fullText.matchAll(pattern)];
+    if (matches.length > 0) {
+      // Construire la description avec action + objet
+      if (matches[0][2]) {
+        // Pattern avec action + objet
+        const action = matches[0][1].toLowerCase().replace(/er$/, 'ation').replace(/é/, 'e');
+        const objet = matches[0][2].trim();
+        info.description = `${action} ${objet}`;
+        break;
+      } else if (matches[0][1]) {
+        // Pattern "travaux de X"
+        info.description = matches[0][1].trim();
+        break;
+      } else {
+        // Pattern simple objet seul
+        info.description = matches[0][0];
+        break;
+      }
+    }
+  }
+
+  // Extraction de la commune
+  const communePatterns = [
+    /(?:commune|ville|à)\s+(?:de\s+|d')?([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][a-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les|de|du)?\s*[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][a-zàâäéèêëïîôùûü]+)*)/g,
+    /(?:Saint|Sainte)\s+[A-Z][a-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les)?\s*[A-Z][a-zàâäéèêëïîôùûü]+)*/g,
+  ];
+
+  for (const pattern of communePatterns) {
+    const matches = [...fullText.matchAll(pattern)];
+    if (matches.length > 0) {
+      const match = matches[0][matches[0].length - 1] || matches[0][0];
+      const cleaned = match.trim().replace(/^(de|d'|à)\s+/i, '');
+      if (cleaned.length > 2 && cleaned.length < 50) {
+        info.commune = cleaned;
+        break;
+      }
+    }
+  }
+
+  // Extraction du budget
+  const budgetPatterns = [
+    /(\d[\d\s]{3,})\s*(?:€|euros?|EUR)/gi,
+    /budget\s+(?:de\s+)?(\d[\d\s]{3,})/gi,
+    /montant\s+(?:de\s+)?(\d[\d\s]{3,})/gi,
+    /pour\s+(?:un\s+montant\s+de\s+)?(\d[\d\s]{3,})\s*(?:€|euros?)/gi,
+  ];
+
+  for (const pattern of budgetPatterns) {
+    const matches = [...fullText.matchAll(pattern)];
+    if (matches.length > 0) {
+      const budgetStr = matches[0][1].replace(/\s/g, '');
+      const budgetNum = parseInt(budgetStr, 10);
+      if (budgetNum >= 1000 && budgetNum <= 100000000) {
+        info.budget = budgetNum;
+        break;
+      }
+    }
+  }
+
+  return info;
 }
 
 function getFallbackResponse(message) {
