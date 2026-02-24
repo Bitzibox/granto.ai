@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const sharp = require('sharp');
 
 const router = express.Router();
 
@@ -14,17 +15,8 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-// Configuration multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const name = crypto.randomUUID() + ext;
-    cb(null, name);
-  },
-});
+// Configuration multer (stockage temporaire)
+const storage = multer.memoryStorage(); // Stocker en mémoire pour traiter avec Sharp
 
 const fileFilter = (req, file, cb) => {
   const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
@@ -42,20 +34,39 @@ const upload = multer({
 });
 
 // POST /api/upload/logo - Upload un logo
-router.post('/logo', upload.single('logo'), (req, res) => {
+router.post('/logo', upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier envoyé' });
     }
 
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    const filename = crypto.randomUUID();
+    let outputFilename;
+    let outputPath;
+
+    // Si c'est un SVG, le sauvegarder tel quel
+    if (req.file.mimetype === 'image/svg+xml') {
+      outputFilename = `${filename}.svg`;
+      outputPath = path.join(UPLOAD_DIR, outputFilename);
+      fs.writeFileSync(outputPath, req.file.buffer);
+    } else {
+      // Pour tous les autres formats (PNG, JPG, WebP), convertir en PNG
+      outputFilename = `${filename}.png`;
+      outputPath = path.join(UPLOAD_DIR, outputFilename);
+
+      await sharp(req.file.buffer)
+        .png({ quality: 90, compressionLevel: 9 })
+        .toFile(outputPath);
+    }
+
+    const logoUrl = `/uploads/logos/${outputFilename}`;
 
     res.json({
       success: true,
       logoUrl,
-      filename: req.file.filename,
+      filename: outputFilename,
       originalName: req.file.originalname,
-      size: req.file.size,
+      size: fs.statSync(outputPath).size,
     });
   } catch (err) {
     console.error('Erreur upload logo:', err);
