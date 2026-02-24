@@ -66,6 +66,10 @@ app.use('/api/assistant-ia', assistantIARouter);
 const uploadRouter = require('./routes/upload');
 app.use('/api/upload', uploadRouter);
 
+// Routes Chatbot IA
+const chatbotRouter = require('./routes/chatbot');
+app.use('/api/chatbot', chatbotRouter);
+
 // Gestion des erreurs 404
 app.use((req, res) => {
   res.status(404).json({

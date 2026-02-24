@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { GrantoLayout } from '@/components/granto-layout'
 import { ThemeProvider } from '@/components/theme-provider'
+import { ChatbotWidget } from '@/components/chatbot-widget'
 import './globals.css'
 
 const inter = Inter({
@@ -32,6 +33,7 @@ export default function RootLayout({
           <GrantoLayout>
             {children}
           </GrantoLayout>
+          <ChatbotWidget />
         </ThemeProvider>
       </body>
     </html>
