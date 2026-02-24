@@ -112,6 +112,10 @@ router.post('/message', async (req, res) => {
       const allMessages = [...history.map(h => h.content), message].join(' ');
       const extractedInfo = extractProjectInfo(allMessages);
 
+      // Debug: log des infos extraites
+      console.log('🔍 Extraction automatique:', JSON.stringify(extractedInfo, null, 2));
+      console.log('📝 Texte analysé:', allMessages);
+
       // Construire le prompt avec contexte
       const chatHistory = history.map(h => `${h.role}: ${h.content}`).join('\n');
 
@@ -312,11 +316,13 @@ function extractProjectInfo(fullText) {
   // Extraction du projet (patterns multiples - capturer l'action + l'objet)
   const projectPatterns = [
     // Pattern 1: "restaurer le gymnase de X" -> "restauration du gymnase"
-    /(restaur(?:er|ation)|rénov(?:er|ation)|aménag(?:er|ement)|construct(?:ion|ion de)|réhabilit(?:er|ation))\s+(?:le|la|l'|les|du|de la|d'un|d'une)?\s*([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans|avec)|$)/gi,
+    /(restaur(?:er|ation)|rénov(?:er|ation)|aménag(?:er|ement)|construct(?:ion|ion de)|réhabilit(?:er|ation))\s+(?:le|la|l'|les|du|de la|d'un|d'une)?\s*([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans|avec|et)|$)/gi,
     // Pattern 2: "travaux de rénovation du gymnase"
-    /travaux\s+de\s+([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans)|$)/gi,
-    // Pattern 3: simple "gymnase" si isolé
-    /(?:gymnase|école|mairie|église|parc|voirie|route|bâtiment|salle|stade|piscine|médiathèque)/gi,
+    /travaux\s+de\s+([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans|et)|$)/gi,
+    // Pattern 3: "aide pour [projet]"
+    /aide[s]?\s+pour\s+(?:la|le|l'|les)?\s*([a-zàâäéèêëïîôùûü\s]+?)(?:\s+(?:de|à|pour|dans|et)|$)/gi,
+    // Pattern 4: simple "gymnase/gymanse" si isolé (tolérant aux fautes de frappe)
+    /(?:gymna[ns]e|école|mairie|église|parc|voirie|route|bâtiment|salle|stade|piscine|médiathèque)/gi,
   ];
 
   for (const pattern of projectPatterns) {
@@ -341,10 +347,12 @@ function extractProjectInfo(fullText) {
     }
   }
 
-  // Extraction de la commune
+  // Extraction de la commune (patterns case-insensitive pour gérer toutes variations)
   const communePatterns = [
-    /(?:commune|ville|à)\s+(?:de\s+|d')?([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][a-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les|de|du)?\s*[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ][a-zàâäéèêëïîôùûü]+)*)/g,
-    /(?:Saint|Sainte)\s+[A-Z][a-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les)?\s*[A-Z][a-zàâäéèêëïîôùûü]+)*/g,
+    // Pattern 1: "commune de X" ou "ville X" ou "à X"
+    /(?:commune|ville|à)\s+(?:de\s+|d')?([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜa-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les|de|du)?\s*[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜa-zàâäéèêëïîôùûü]+)*)/gi,
+    // Pattern 2: "Saint/Sainte X" (accept all case variations)
+    /(?:Saint|Sainte)\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜa-zàâäéèêëïîôùûü]+(?:\s+(?:la|le|les)?\s*[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜa-zàâäéèêëïîôùûü]+)*/gi,
   ];
 
   for (const pattern of communePatterns) {
@@ -353,7 +361,10 @@ function extractProjectInfo(fullText) {
       const match = matches[0][matches[0].length - 1] || matches[0][0];
       const cleaned = match.trim().replace(/^(de|d'|à)\s+/i, '');
       if (cleaned.length > 2 && cleaned.length < 50) {
-        info.commune = cleaned;
+        // Normaliser la casse : Majuscule au début de chaque mot
+        info.commune = cleaned.split(' ').map(word =>
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
         break;
       }
     }
