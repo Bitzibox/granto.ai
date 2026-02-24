@@ -920,13 +920,40 @@ export default function TemplatesPage() {
                     className="mx-auto bg-white rounded shadow-sm border overflow-hidden"
                     style={{ width: '200px', height: '280px', position: 'relative' }}
                   >
-                    {/* Header */}
-                    {template.headerText && (
+                    {/* Header avec logo */}
+                    {(template.headerText || template.logoUrl) && (
                       <div
-                        className="text-center px-2 py-1 border-b"
-                        style={{ fontSize: '5px', color: template.colorAccent, textAlign: template.headerAlign as any }}
+                        className="px-2 py-1 border-b flex items-center gap-1"
+                        style={{
+                          fontSize: '5px',
+                          color: template.colorAccent,
+                          justifyContent: template.logoPosition === 'header-center'
+                            ? 'center'
+                            : template.logoPosition === 'header-right'
+                            ? 'flex-end'
+                            : 'flex-start'
+                        }}
                       >
-                        {template.headerText}
+                        {template.logoUrl && (
+                          <img
+                            src={template.logoUrl}
+                            alt="Logo"
+                            className="object-contain"
+                            style={{
+                              maxHeight: '12px',
+                              maxWidth: '30px',
+                              opacity: 0.8
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        )}
+                        {template.headerText && (
+                          <span style={{ textAlign: template.headerAlign as any }}>
+                            {template.headerText}
+                          </span>
+                        )}
                       </div>
                     )}
                     {/* Titre */}

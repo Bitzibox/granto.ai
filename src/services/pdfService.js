@@ -178,11 +178,86 @@ async function genererDossierPDF(params, templateConfig = null) {
        .fillColor(tpl.colorSecondary);
   };
 
-  // === EN-TÊTE PERSONNALISÉ ===
-  if (tpl.headerText) {
+  // === EN-TÊTE PERSONNALISÉ (logo + texte) ===
+  const startY = doc.y;
+  let logoRendered = false;
+
+  // Afficher le logo si disponible
+  if (tpl.logoUrl) {
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      const https = require('https');
+      const http = require('http');
+
+      // Déterminer si c'est un chemin local ou une URL
+      let logoPath = tpl.logoUrl;
+
+      // Si c'est un chemin relatif local (commence par /uploads), le convertir en chemin absolu
+      if (logoPath.startsWith('/uploads/')) {
+        logoPath = path.join(__dirname, '../../public', logoPath);
+        if (fs.existsSync(logoPath)) {
+          // Calculer la position X selon logoPosition
+          let logoX = col1;
+          if (tpl.logoPosition === 'header-center') {
+            logoX = (doc.page.width - tpl.logoWidth) / 2;
+          } else if (tpl.logoPosition === 'header-right') {
+            logoX = doc.page.width - tpl.marginRight - tpl.logoWidth;
+          }
+
+          doc.image(logoPath, logoX, doc.y, {
+            width: tpl.logoWidth,
+            height: tpl.logoHeight,
+            fit: [tpl.logoWidth, tpl.logoHeight],
+            align: 'center',
+            valign: 'center'
+          });
+
+          // Positionner le texte du header à côté du logo si logo à gauche/droite
+          if (tpl.logoPosition === 'header-left' && tpl.headerText) {
+            doc.y = startY;
+            doc.fontSize(8)
+               .fillColor(tpl.colorAccent)
+               .text(tpl.headerText, col1 + tpl.logoWidth + 10, doc.y, {
+                 align: 'left',
+                 width: contentWidth - tpl.logoWidth - 10
+               });
+          } else if (tpl.logoPosition === 'header-right' && tpl.headerText) {
+            doc.y = startY;
+            doc.fontSize(8)
+               .fillColor(tpl.colorAccent)
+               .text(tpl.headerText, col1, doc.y, {
+                 align: 'left',
+                 width: contentWidth - tpl.logoWidth - 10
+               });
+          } else {
+            // Logo centré, texte en dessous
+            doc.y = startY + tpl.logoHeight + 5;
+          }
+
+          logoRendered = true;
+        }
+      }
+      // TODO: Support URL externes avec fetch si besoin
+    } catch (err) {
+      console.warn('⚠️ Erreur chargement logo:', err.message);
+    }
+  }
+
+  // Afficher le texte du header si pas déjà affiché avec logo
+  if (tpl.headerText && !logoRendered) {
     doc.fontSize(8)
        .fillColor(tpl.colorAccent)
        .text(tpl.headerText, { align: tpl.headerAlign });
+  } else if (tpl.headerText && logoRendered && tpl.logoPosition === 'header-center') {
+    // Si logo centré, afficher texte en dessous
+    doc.fontSize(8)
+       .fillColor(tpl.colorAccent)
+       .text(tpl.headerText, { align: tpl.headerAlign });
+  }
+
+  // Espacer avant le titre
+  if (tpl.headerText || logoRendered) {
     doc.moveDown(1);
   }
 
