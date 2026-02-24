@@ -40,11 +40,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes principales
-app.use('/api/collectivites', require('./routes/collectivites'));
-app.use('/api/projets', require('./routes/projets'));
-app.use('/api/dispositifs', require('./routes/dispositifs'));
-app.use('/api/dossiers', require('./routes/dossiers'));
+// Routes principales (temporairement désactivées - problème Prisma)
+// TODO: Réactiver après résolution du problème Prisma
+// app.use('/api/collectivites', require('./routes/collectivites'));
+// app.use('/api/projets', require('./routes/projets'));
+// app.use('/api/dispositifs', require('./routes/dispositifs'));
+// app.use('/api/dossiers', require('./routes/dossiers'));
 
 // Import du service Aides-Territoires
 const aidesTerritoires = require('./services/aidesTerritoires');
@@ -58,8 +59,8 @@ const assistantIARouter = require('./routes/assistant-ia');
 app.use('/api/assistant-ia', assistantIARouter);
 
 // Routes Templates PDF
-const pdfTemplatesRouter = require('./routes/pdf-templates');
-app.use('/api/pdf-templates', pdfTemplatesRouter);
+// const pdfTemplatesRouter = require('./routes/pdf-templates');
+// app.use('/api/pdf-templates', pdfTemplatesRouter);
 
 // Routes Upload (logos, etc.)
 const uploadRouter = require('./routes/upload');
