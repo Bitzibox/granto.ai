@@ -49,12 +49,23 @@ Quand l'utilisateur demande l'Assistant IA ou la recherche de subventions SANS f
 - Commune concernée
 - Budget estimé
 
-Exemple de dialogue:
-Utilisateur: "Je veux utiliser l'assistant IA"
-Assistant: "Parfait ! L'Assistant IA va analyser votre projet et vous proposer les meilleures subventions. Pour commencer, pouvez-vous me décrire votre projet en quelques mots ? (ex: rénovation énergétique, aménagement de voirie, construction d'une école...)"
-[Après réponse] "Dans quelle commune se situe ce projet ?"
-[Après réponse] "Quel est le budget estimé pour ce projet ?"
-[Puis] "[ACTION:/recherche-subventions|Lancer l'analyse maintenant|description=...&commune=...&budget=...]"
+⚠️ TRÈS IMPORTANT - GESTION DE LA MÉMOIRE:
+- TOUJOURS analyser l'HISTORIQUE DE CONVERSATION complet avant de répondre
+- Si l'utilisateur a DÉJÀ mentionné une information (projet, commune, budget) dans un message précédent, NE PAS la redemander
+- Extraire et mémoriser toutes les informations de projet mentionnées dans l'historique
+- Ne demander QUE les informations manquantes qui n'apparaissent nulle part dans l'historique
+- Dès que tu as les 3 informations (description, commune, budget) provenant de N'IMPORTE QUEL message de l'historique, génère IMMÉDIATEMENT le lien [ACTION]
+
+Exemple de dialogue correct:
+Utilisateur: "Je veux des aides pour restaurer le gymnase de ma commune pour 500000€"
+Assistant: "Excellent ! J'ai noté votre projet de restauration du gymnase avec un budget de 500 000€. Pour lancer l'analyse avec l'Assistant IA, il me manque juste le nom de votre commune. Quelle est-elle ?"
+Utilisateur: "Saint Mars la Brière"
+Assistant: "Parfait ! J'ai maintenant toutes les informations : [ACTION:/recherche-subventions|Lancer l'analyse du projet|description=restauration du gymnase&commune=Saint Mars la Brière&budget=500000]"
+
+⚠️ ERREUR À ÉVITER:
+❌ Ne JAMAIS redemander une info déjà fournie
+❌ Ne JAMAIS dire "Il me manque la description" si elle a été mentionnée 3 messages avant
+❌ TOUJOURS vérifier TOUT l'historique avant de demander quoi que ce soit
 
 RÈGLES DE COMPORTEMENT:
 - Réponds TOUJOURS en français
@@ -87,7 +98,7 @@ router.post('/message', async (req, res) => {
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.4,  // Plus déterministe pour extraire infos précises
           topP: 0.9,
           maxOutputTokens: 1500
         }
@@ -105,7 +116,14 @@ router.post('/message', async (req, res) => {
 ${chatHistory ? `HISTORIQUE DE CONVERSATION:\n${chatHistory}\n` : ''}
 UTILISATEUR: ${message}
 
-Réponds de manière concise et utile avec des liens cliquables [LINK:...] ou actions [ACTION:...] quand c'est pertinent.`;
+⚠️ AVANT DE RÉPONDRE, analyse l'HISTORIQUE complet pour identifier :
+- Description du projet (déjà mentionnée ?)
+- Commune (déjà mentionnée ?)
+- Budget (déjà mentionné ?)
+
+Si tu as les 3 infos dans l'historique, génère IMMÉDIATEMENT le lien [ACTION:/recherche-subventions|...|description=...&commune=...&budget=...] sans rien redemander.
+
+Réponds avec des liens cliquables [LINK:...] ou actions [ACTION:...] quand c'est pertinent.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
