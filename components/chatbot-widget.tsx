@@ -408,19 +408,32 @@ export function ChatbotWidget() {
       {/* Styles */}
       <style jsx global>{`
         .chatbot-action {
-          color: hsl(var(--primary));
-          font-weight: 600;
+          color: #2563eb;
+          font-weight: 700;
           cursor: pointer;
-          text-decoration: none;
-          border-bottom: 1.5px solid hsl(var(--primary) / 0.4);
+          text-decoration: underline;
+          text-decoration-color: #2563eb;
+          text-underline-offset: 2px;
           transition: all 0.2s ease;
-          padding: 1px 2px;
+          padding: 0 2px;
           border-radius: 2px;
         }
 
         .chatbot-action:hover {
-          background: hsl(var(--primary) / 0.1);
-          border-bottom-color: hsl(var(--primary));
+          color: #1d4ed8;
+          text-decoration-color: #1d4ed8;
+          background: rgba(37, 99, 235, 0.1);
+        }
+
+        .dark .chatbot-action {
+          color: #60a5fa;
+          text-decoration-color: #60a5fa;
+        }
+
+        .dark .chatbot-action:hover {
+          color: #93c5fd;
+          text-decoration-color: #93c5fd;
+          background: rgba(96, 165, 250, 0.1);
         }
 
         .typing-dot {

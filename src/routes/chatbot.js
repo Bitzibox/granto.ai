@@ -21,8 +21,7 @@ Granto est une plateforme innovante qui aide les collectivités (communes, EPCI,
 
 FONCTIONNALITÉS PRINCIPALES ET LEURS ROUTES:
 - **Tableau de bord** (/): Vue d'ensemble des projets, dossiers en cours, calendrier des échéances
-- **Recherche de subventions** (/recherche-subventions): Moteur de recherche connecté à Aides-Territoires avec filtrage géographique intelligent
-- **Assistant IA** (/assistant-ia): Analyse un projet (description + commune + budget) et identifie les TOP 3 aides les plus pertinentes avec scoring intelligent
+- **Recherche de subventions et Assistant IA** (/recherche-subventions): L'Assistant IA est en haut de cette page, il analyse un projet (description + commune + budget) et identifie les TOP 3 aides. La recherche manuelle est en bas.
 - **Projets** (/projets): Gestion de tous vos projets
 - **Dossiers** (/dossiers): Suivi de l'état d'avancement de chaque demande
 - **Paramètres Templates** (/parametres/templates): Personnalisation complète des documents (logo, couleurs, marges, en-têtes/pieds de page)
@@ -34,7 +33,7 @@ Quand tu mentionnes une fonctionnalité, utilise TOUJOURS ce format pour créer 
 
 Exemples :
 - "Rendez-vous dans [LINK:/recherche-subventions|Recherche de subventions]"
-- "Utilisez [LINK:/assistant-ia|l'Assistant IA]"
+- "Utilisez [LINK:/recherche-subventions|l'Assistant IA]"
 - "Personnalisez dans [LINK:/parametres/templates|Paramètres > Templates]"
 
 ACTIONS AVEC PRÉ-REMPLISSAGE:
@@ -42,7 +41,20 @@ Pour diriger l'utilisateur vers un formulaire pré-rempli, utilise :
 [ACTION:chemin|texte|param1=value1&param2=value2]
 
 Exemple :
-- "[ACTION:/assistant-ia|Analyser ce projet|description=Rénovation énergétique de la mairie&commune=Le Mans&budget=250000]"
+- "[ACTION:/recherche-subventions|Analyser ce projet|description=Rénovation énergétique de la mairie&commune=Le Mans&budget=250000]"
+
+QUESTIONS PROGRESSIVES:
+Quand l'utilisateur demande l'Assistant IA ou la recherche de subventions SANS fournir tous les détails nécessaires, pose-lui des questions pour collecter les informations manquantes:
+- Description du projet (type de travaux, objectif)
+- Commune concernée
+- Budget estimé
+
+Exemple de dialogue:
+Utilisateur: "Je veux utiliser l'assistant IA"
+Assistant: "Parfait ! L'Assistant IA va analyser votre projet et vous proposer les meilleures subventions. Pour commencer, pouvez-vous me décrire votre projet en quelques mots ? (ex: rénovation énergétique, aménagement de voirie, construction d'une école...)"
+[Après réponse] "Dans quelle commune se situe ce projet ?"
+[Après réponse] "Quel est le budget estimé pour ce projet ?"
+[Puis] "[ACTION:/recherche-subventions|Lancer l'analyse maintenant|description=...&commune=...&budget=...]"
 
 RÈGLES DE COMPORTEMENT:
 - Réponds TOUJOURS en français
@@ -221,7 +233,7 @@ function enrichResponseWithLinks(text) {
 
   // Auto-détection des fonctionnalités mentionnées (fallback si pas de LINK/ACTION)
   const autoLinks = [
-    { pattern: /Assistant IA(?! \(cliquez ici\))/gi, path: '/assistant-ia', label: 'Assistant IA' },
+    { pattern: /Assistant IA(?! \(cliquez ici\))/gi, path: '/recherche-subventions', label: 'Assistant IA' },
     { pattern: /Recherche (?:de )?subventions?(?! \(cliquez ici\))/gi, path: '/recherche-subventions', label: 'Recherche de subventions' },
     { pattern: /Tableau de bord(?! \(cliquez ici\))/gi, path: '/', label: 'Tableau de bord' },
     { pattern: /Paramètres(?: > Templates)?(?! \(cliquez ici\))/gi, path: '/parametres/templates', label: 'Paramètres' },
@@ -281,7 +293,7 @@ function getFallbackResponse(message) {
     }
 
     if (params.length > 0) {
-      return `Je peux vous aider à analyser ce projet ! [ACTION:/assistant-ia|Cliquez ici pour lancer l'analyse|${params.join('&')}] et découvrez les subventions disponibles pour ${projectDesc || 'votre projet'}.`;
+      return `Je peux vous aider à analyser ce projet ! [ACTION:/recherche-subventions|Cliquez ici pour lancer l'analyse|${params.join('&')}] et découvrez les subventions disponibles pour ${projectDesc || 'votre projet'}.`;
     }
   }
 
@@ -289,27 +301,32 @@ function getFallbackResponse(message) {
     return 'Bonjour ! Je suis l\'assistant Granto. Je peux vous aider à naviguer dans la plateforme, trouver des subventions adaptées à vos projets ou vous guider dans le montage de dossiers. Comment puis-je vous aider ?';
   }
 
+  // Demande explicite d'utiliser l'assistant IA sans fournir de détails
+  if ((lower.includes('assistant') || lower.includes('analyser') || lower.includes('analyse')) && !hasProject && !hasCommune && !hasBudget) {
+    return 'Parfait ! L\'**Assistant IA** va analyser votre projet et vous proposer les meilleures subventions disponibles.\n\nPour commencer, j\'ai besoin de quelques informations :\n\n1️⃣ **Quel est votre projet ?** (ex: rénovation énergétique d\'une école, aménagement d\'une place, construction d\'une salle polyvalente...)\n\n2️⃣ **Dans quelle commune ?** (nom de la commune)\n\n3️⃣ **Quel est votre budget estimé ?** (en euros)\n\nVous pouvez me donner ces informations dans un seul message ou une par une. 😊';
+  }
+
   if (lower.includes('subvention') || lower.includes('aide') || lower.includes('financement')) {
-    return 'Pour rechercher des subventions adaptées à votre projet, rendez-vous dans [LINK:/recherche-subventions|Recherche de subventions]. Vous pouvez aussi utiliser [LINK:/assistant-ia|l\'Assistant IA] qui analyse automatiquement votre projet et identifie les meilleures aides disponibles avec un score de pertinence.';
+    return 'Pour rechercher des subventions adaptées à votre projet, rendez-vous dans [LINK:/recherche-subventions|Recherche de subventions]. Vous pouvez aussi utiliser [LINK:/recherche-subventions|l\'Assistant IA] qui analyse automatiquement votre projet et identifie les meilleures aides disponibles avec un score de pertinence.';
   }
 
   if (lower.includes('dossier') || lower.includes('demande') || lower.includes('pdf')) {
-    return 'Granto peut générer automatiquement vos dossiers de demande de subvention en PDF professionnel. Utilisez [LINK:/assistant-ia|l\'Assistant IA] pour analyser votre projet, puis cliquez sur "Télécharger le dossier" pour obtenir un document complet prêt à envoyer. Vous pouvez personnaliser le template dans [LINK:/parametres/templates|Paramètres].';
+    return 'Granto peut générer automatiquement vos dossiers de demande de subvention en PDF professionnel. Utilisez [LINK:/recherche-subventions|l\'Assistant IA] pour analyser votre projet, puis cliquez sur "Télécharger le dossier" pour obtenir un document complet prêt à envoyer. Vous pouvez personnaliser le template dans [LINK:/parametres/templates|Paramètres].';
   }
 
   if (lower.includes('detr') || lower.includes('dsil')) {
-    return 'La **DETR** (Dotation d\'Équipement des Territoires Ruraux) et la **DSIL** (Dotation de Soutien à l\'Investissement Local) sont les deux principales dotations de l\'État pour les collectivités. [LINK:/assistant-ia|L\'Assistant IA] de Granto évalue automatiquement l\'éligibilité de votre projet à ces dispositifs.';
+    return 'La **DETR** (Dotation d\'Équipement des Territoires Ruraux) et la **DSIL** (Dotation de Soutien à l\'Investissement Local) sont les deux principales dotations de l\'État pour les collectivités. [LINK:/recherche-subventions|L\'Assistant IA] de Granto évalue automatiquement l\'éligibilité de votre projet à ces dispositifs.';
   }
 
   if (lower.includes('comment') && lower.includes('fonctionne')) {
-    return 'Granto simplifie la gestion des subventions en 3 étapes :\n1. **Décrivez votre projet** via [LINK:/assistant-ia|l\'Assistant IA]\n2. **Identifiez les aides** grâce à [LINK:/recherche-subventions|notre moteur de recherche]\n3. **Générez vos dossiers** en PDF professionnel, prêts à envoyer\n\nLe tout avec un [LINK:/|tableau de bord] centralisé pour suivre vos demandes.';
+    return 'Granto simplifie la gestion des subventions en 3 étapes :\n1. **Décrivez votre projet** via [LINK:/recherche-subventions|l\'Assistant IA]\n2. **Identifiez les aides** grâce à [LINK:/recherche-subventions|notre moteur de recherche]\n3. **Générez vos dossiers** en PDF professionnel, prêts à envoyer\n\nLe tout avec un [LINK:/|tableau de bord] centralisé pour suivre vos demandes.';
   }
 
   if (lower.includes('template') || lower.includes('logo') || lower.includes('personnalis')) {
     return 'Vous pouvez personnaliser vos documents PDF dans [LINK:/parametres/templates|Paramètres > Templates]. Ajoutez le logo de votre collectivité, modifiez les couleurs, les marges, et les en-têtes/pieds de page pour créer des dossiers à votre image.';
   }
 
-  return 'Je suis l\'assistant Granto, votre guide pour la gestion des subventions. Je peux vous aider à :\n- [LINK:/recherche-subventions|Rechercher des aides] adaptées à vos projets\n- [LINK:/assistant-ia|Utiliser l\'Assistant IA] pour analyser vos besoins\n- Générer des dossiers PDF professionnels\n- [LINK:/|Naviguer dans la plateforme]\n\nQue souhaitez-vous faire ?';
+  return 'Je suis l\'assistant Granto, votre guide pour la gestion des subventions. Je peux vous aider à :\n- [LINK:/recherche-subventions|Rechercher des aides] adaptées à vos projets\n- [LINK:/recherche-subventions|Utiliser l\'Assistant IA] pour analyser vos besoins\n- Générer des dossiers PDF professionnels\n- [LINK:/|Naviguer dans la plateforme]\n\nQue souhaitez-vous faire ?';
 }
 
 module.exports = router;
