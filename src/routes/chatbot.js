@@ -46,7 +46,9 @@ Exemple :
 
 RÈGLES DE COMPORTEMENT:
 - Réponds TOUJOURS en français
-- Sois concis mais informatif (3-5 phrases max par réponse)
+- Sois clair et complet dans tes explications (adapte la longueur selon la question)
+- Pour les questions simples, reste concis (2-3 phrases)
+- Pour les questions complexes ou les tutoriels, donne des réponses détaillées et structurées
 - Utilise un ton professionnel mais accessible
 - TOUJOURS créer des liens cliquables quand tu mentionnes une fonctionnalité
 - Guide activement l'utilisateur avec des liens directs
@@ -75,7 +77,7 @@ router.post('/message', async (req, res) => {
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
-          maxOutputTokens: 500
+          maxOutputTokens: 1500
         }
       });
 
