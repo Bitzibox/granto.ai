@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import {
   MessageCircle,
@@ -13,6 +13,7 @@ import {
   Loader2,
   ChevronDown,
   Minimize2,
+  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,15 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  actions?: Action[]
+}
+
+interface Action {
+  id: string
+  type: 'link' | 'action'
+  path: string
+  label: string
+  params?: Record<string, string>
 }
 
 export function ChatbotWidget() {
@@ -37,6 +47,7 @@ export function ChatbotWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const pathname = usePathname()
+  const router = useRouter()
   const { theme } = useTheme()
 
   // Charger les suggestions contextuelles
@@ -108,6 +119,7 @@ export function ChatbotWidget() {
         role: 'assistant',
         content: data.response || 'Désolé, je n\'ai pas pu traiter votre message.',
         timestamp: new Date(),
+        actions: data.actions || [],
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch {
@@ -140,11 +152,52 @@ export function ChatbotWidget() {
     setPulseButton(false)
   }
 
-  // Formatter le texte avec du markdown basique
-  const formatMessage = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-primary font-semibold">$1</strong>')
+  const handleActionClick = useCallback((action: Action) => {
+    if (action.type === 'link') {
+      router.push(action.path)
+    } else if (action.type === 'action' && action.params) {
+      // Stocker les paramètres dans localStorage pour pré-remplissage
+      localStorage.setItem('chatbot_prefill', JSON.stringify({
+        path: action.path,
+        params: action.params,
+        timestamp: Date.now()
+      }))
+      router.push(action.path)
+    }
+  }, [router])
+
+  // Formatter le texte avec du markdown basique et rendre les actions cliquables
+  const formatMessage = (text: string, actions?: Action[]) => {
+    let formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
       .replace(/\n/g, '<br/>')
+
+    // Remplacer les balises <action> par des liens cliquables
+    if (actions && actions.length > 0) {
+      actions.forEach(action => {
+        const actionRegex = new RegExp(`<action data-id="${action.id}">(.*?)<\\/action>`, 'g')
+        formatted = formatted.replace(
+          actionRegex,
+          `<span class="chatbot-action" data-action-id="${action.id}">$1</span>`
+        )
+      })
+    }
+
+    return formatted
+  }
+
+  // Gérer les clics sur les actions dans le message
+  const handleMessageClick = (e: React.MouseEvent, actions?: Action[]) => {
+    const target = e.target as HTMLElement
+    const actionSpan = target.closest('.chatbot-action')
+
+    if (actionSpan && actions) {
+      const actionId = actionSpan.getAttribute('data-action-id')
+      const action = actions.find(a => a.id === actionId)
+      if (action) {
+        handleActionClick(action)
+      }
+    }
   }
 
   return (
@@ -211,7 +264,7 @@ export function ChatbotWidget() {
                     Bienvenue sur Granto
                   </h4>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md">
-                    Je suis votre assistant IA. Posez-moi vos questions sur les subventions et la plateforme.
+                    Je suis votre assistant IA. Posez-moi vos questions sur les subventions et la plateforme. Je peux vous guider directement vers les bonnes fonctionnalités.
                   </p>
 
                   {/* Suggestions */}
@@ -246,12 +299,13 @@ export function ChatbotWidget() {
 
                   <div
                     className={cn(
-                      'rounded-2xl px-4 py-3 text-sm leading-relaxed break-words',
+                      'rounded-2xl px-4 py-3 text-sm leading-relaxed break-words cursor-text',
                       msg.role === 'user'
                         ? 'rounded-br-md bg-gradient-primary text-white max-w-[75%]'
                         : 'rounded-bl-md bg-card border max-w-[85%]'
                     )}
-                    dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }}
+                    onClick={(e) => msg.role === 'assistant' && handleMessageClick(e, msg.actions)}
+                    dangerouslySetInnerHTML={{ __html: formatMessage(msg.content, msg.actions) }}
                   />
 
                   {msg.role === 'user' && (
@@ -352,7 +406,23 @@ export function ChatbotWidget() {
       </button>
 
       {/* Styles */}
-      <style jsx>{`
+      <style jsx global>{`
+        .chatbot-action {
+          color: hsl(var(--primary));
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: none;
+          border-bottom: 1.5px solid hsl(var(--primary) / 0.4);
+          transition: all 0.2s ease;
+          padding: 1px 2px;
+          border-radius: 2px;
+        }
+
+        .chatbot-action:hover {
+          background: hsl(var(--primary) / 0.1);
+          border-bottom-color: hsl(var(--primary));
+        }
+
         .typing-dot {
           display: inline-block;
           width: 7px;
