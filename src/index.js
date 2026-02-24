@@ -15,6 +15,10 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Servir les fichiers statiques (uploads de logos, etc.)
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // SÉCURITÉ: Headers de sécurité avec Helmet
 app.use(helmetConfig);
 
@@ -56,6 +60,10 @@ app.use('/api/assistant-ia', assistantIARouter);
 // Routes Templates PDF
 const pdfTemplatesRouter = require('./routes/pdf-templates');
 app.use('/api/pdf-templates', pdfTemplatesRouter);
+
+// Routes Upload (logos, etc.)
+const uploadRouter = require('./routes/upload');
+app.use('/api/upload', uploadRouter);
 
 // Gestion des erreurs 404
 app.use((req, res) => {

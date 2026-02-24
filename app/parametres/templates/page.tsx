@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Settings, Palette, Type, Layout, Eye, Save, RotateCcw,
-  ChevronUp, ChevronDown, GripVertical, FileText, Plus, Copy, Trash2
+  ChevronUp, ChevronDown, GripVertical, FileText, Plus, Copy, Trash2, Upload, ImageIcon, X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -86,6 +86,8 @@ export default function TemplatesPage() {
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Charger les templates
   useEffect(() => {
@@ -303,6 +305,42 @@ export default function TemplatesPage() {
     } finally {
       setPreviewLoading(false)
     }
+  }
+
+  // Upload logo
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('logo', file)
+
+      const res = await fetch('/api/upload/logo', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (res.ok && data.logoUrl) {
+        updateField('logoUrl', data.logoUrl)
+        setSaveMessage('Logo uploade avec succes')
+      } else {
+        setSaveMessage(`Erreur: ${data.error || 'Echec de l\'upload'}`)
+      }
+    } catch (err: any) {
+      setSaveMessage(`Erreur upload: ${err.message}`)
+    } finally {
+      setUploading(false)
+      // Reset le input pour pouvoir re-uploader le meme fichier
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  // Supprimer le logo
+  const handleRemoveLogo = () => {
+    updateField('logoUrl', '')
   }
 
   return (
@@ -703,9 +741,74 @@ export default function TemplatesPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Logo</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Logo de la collectivite
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
+                  {/* Apercu du logo actuel */}
+                  {template.logoUrl && (
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-shrink-0 bg-white rounded border p-2">
+                        <img
+                          src={template.logoUrl}
+                          alt="Logo"
+                          className="max-h-16 max-w-[120px] object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">{template.logoUrl}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={handleRemoveLogo} className="text-destructive hover:text-destructive flex-shrink-0">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Upload */}
+                  <div>
+                    <Label className="mb-2 block">Uploader un logo</Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <>
+                          <Upload className="h-4 w-4 mr-2 animate-pulse" />
+                          Upload en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Choisir un fichier (PNG, JPG, SVG, WebP - max 2 Mo)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Ou URL */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="bg-card px-3 text-xs text-muted-foreground">ou</span>
+                    </div>
+                  </div>
+
                   <div>
                     <Label>URL du logo</Label>
                     <Input
@@ -715,6 +818,8 @@ export default function TemplatesPage() {
                       className="mt-1"
                     />
                   </div>
+
+                  {/* Position et dimensions */}
                   <div>
                     <Label>Position</Label>
                     <Select value={template.logoPosition} onValueChange={(v) => updateField('logoPosition', v)}>
