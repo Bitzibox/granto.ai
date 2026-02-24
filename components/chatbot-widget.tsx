@@ -69,6 +69,42 @@ export function ChatbotWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  // Attacher les event listeners aux liens cliquables après chaque rendu
+  useEffect(() => {
+    const handleActionElementClick = (e: Event) => {
+      const target = e.target as HTMLElement
+      const actionId = target.getAttribute('data-action-id')
+
+      if (actionId) {
+        // Trouver le message qui contient cette action
+        const message = messages.find(msg =>
+          msg.actions?.some(a => a.id === actionId)
+        )
+
+        if (message && message.actions) {
+          const action = message.actions.find(a => a.id === actionId)
+          if (action) {
+            e.preventDefault()
+            handleActionClick(action)
+          }
+        }
+      }
+    }
+
+    // Attacher les listeners à tous les éléments .chatbot-action
+    const actionElements = document.querySelectorAll('.chatbot-action')
+    actionElements.forEach(el => {
+      el.addEventListener('click', handleActionElementClick)
+    })
+
+    // Cleanup
+    return () => {
+      actionElements.forEach(el => {
+        el.removeEventListener('click', handleActionElementClick)
+      })
+    }
+  }, [messages, handleActionClick])
+
   // Focus input quand ouvert
   useEffect(() => {
     if (isOpen && !isMinimized) {
@@ -186,19 +222,6 @@ export function ChatbotWidget() {
     return formatted
   }
 
-  // Gérer les clics sur les actions dans le message
-  const handleMessageClick = (e: React.MouseEvent, actions?: Action[]) => {
-    const target = e.target as HTMLElement
-    const actionSpan = target.closest('.chatbot-action')
-
-    if (actionSpan && actions) {
-      const actionId = actionSpan.getAttribute('data-action-id')
-      const action = actions.find(a => a.id === actionId)
-      if (action) {
-        handleActionClick(action)
-      }
-    }
-  }
 
   return (
     <>
@@ -304,7 +327,6 @@ export function ChatbotWidget() {
                         ? 'rounded-br-md bg-gradient-primary text-white max-w-[75%]'
                         : 'rounded-bl-md bg-card border max-w-[85%]'
                     )}
-                    onClick={(e) => msg.role === 'assistant' && handleMessageClick(e, msg.actions)}
                     dangerouslySetInnerHTML={{ __html: formatMessage(msg.content, msg.actions) }}
                   />
 
