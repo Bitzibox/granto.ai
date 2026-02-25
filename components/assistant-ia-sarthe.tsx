@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Sparkles, Loader2, FileText, ExternalLink, Download, TrendingUp } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Sparkles, Loader2, FileText, ExternalLink, Download, TrendingUp, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,6 +18,7 @@ interface PdfTemplate {
 
 export function AssistantIASarthe() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [description, setDescription] = useState('')
   const [commune, setCommune] = useState('')
   const [budget, setBudget] = useState('')
@@ -177,6 +178,19 @@ export function AssistantIASarthe() {
     if (score >= 80) return 'Excellent match'
     if (score >= 60) return 'Bon match'
     return 'Match possible'
+  }
+
+  const handleVoirToutesLesAides = () => {
+    if (!resultats) return
+
+    // Construire les paramètres de recherche pour la recherche classique
+    const params = new URLSearchParams()
+    params.set('territoire', resultats.commune?.nom || commune)
+    params.set('text', description)
+
+    // Recharger la page avec les paramètres pour pré-remplir la recherche classique
+    // La recherche classique va lire ces params et auto-lancer la recherche
+    window.location.href = `/recherche-subventions?${params.toString()}#recherche-classique`
   }
 
   return (
@@ -454,6 +468,28 @@ export function AssistantIASarthe() {
                   </div>
                 </div>
               )}
+
+              {/* Bouton Voir toutes les aides */}
+              <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-2 border-blue-500/20">
+                <CardContent className="p-6 text-center">
+                  <Search className="h-12 w-12 mx-auto mb-3 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Explorer toutes les aides disponibles
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Vous voulez voir plus de résultats? Accédez à la recherche classique avec {resultats.total_found} aides analysées
+                  </p>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                    onClick={handleVoirToutesLesAides}
+                  >
+                    <Search className="h-5 w-5 mr-2" />
+                    Voir toutes les aides ({resultats.total_found})
+                  </Button>
+                </CardContent>
+              </Card>
 
               {/* CTA Global */}
               <Card className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-2 border-green-500/20">

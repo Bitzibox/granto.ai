@@ -25,9 +25,11 @@ export default function RechercheSubventionsPage() {
       </div>
 
       {/* Recherche manuelle - EN BAS (option alternative) */}
-      <Suspense fallback={<div>Chargement de la recherche...</div>}>
-        <GrantSearch />
-      </Suspense>
+      <div id="recherche-classique">
+        <Suspense fallback={<div>Chargement de la recherche...</div>}>
+          <GrantSearch />
+        </Suspense>
+      </div>
     </div>
   )
 }

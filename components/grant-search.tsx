@@ -97,6 +97,11 @@ export function GrantSearch() {
       if (urlTerritoire) setTerritoire(urlTerritoire)
       if (urlText) setMotsCles(urlText)
       if (urlFromProjet) setFromProjetId(urlFromProjet)
+
+      // Auto-lancer la recherche si territoire ET text sont présents
+      if (urlTerritoire && urlText) {
+        setHasSearched(true) // Marquer comme recherché pour déclencher l'effet
+      }
       return
     }
 
@@ -152,6 +157,14 @@ export function GrantSearch() {
       localStorage.setItem('granto_search_criteria', JSON.stringify(criteria))
     }
   }, [territoire, motsCles, typeAide, categorie, hasSearched])
+
+  // Auto-lancer la recherche quand hasSearched est marqué comme vrai (redirection depuis Assistant IA)
+  useEffect(() => {
+    if (hasSearched && (territoire || motsCles) && results.length === 0 && !loading) {
+      // Lancer automatiquement la recherche
+      handleSearch()
+    }
+  }, [hasSearched])
 
   // Fonction pour obtenir le badge territorial
   const getTerritorialBadge = (scale: string) => {
