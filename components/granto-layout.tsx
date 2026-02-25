@@ -10,11 +10,11 @@ import {
   Calendar,
   Building2,
   Settings,
-  Bell,
   User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/notification-bell'
 
 const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
@@ -79,9 +79,7 @@ export function GrantoLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <button className="rounded-full p-2 hover:bg-accent transition-all duration-300 hover:scale-110">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-            </button>
+            <NotificationBell />
             <button className="flex items-center gap-2 rounded-full bg-secondary/50 backdrop-blur-sm py-2 px-4 hover:bg-secondary transition-all duration-300 hover:shadow-md hover:scale-[1.02] border border-border/50">
               <User className="h-5 w-5 text-secondary-foreground" />
               <span className="text-sm font-medium text-secondary-foreground">Utilisateur</span>
