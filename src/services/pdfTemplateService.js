@@ -175,9 +175,12 @@ async function deleteTemplate(id) {
  * Définit un template comme template par défaut
  */
 async function setDefaultTemplate(id, userId) {
-  // Désactiver tous les templates par défaut de l'utilisateur
+  // Construire la requête where en fonction du userId
+  const whereCondition = userId ? { userId } : {};
+
+  // Désactiver tous les templates par défaut (de l'utilisateur si userId fourni, sinon tous)
   await prisma.pdfTemplate.updateMany({
-    where: { userId },
+    where: whereCondition,
     data: { isDefault: false }
   });
 
