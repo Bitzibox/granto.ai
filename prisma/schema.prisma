@@ -38,6 +38,7 @@ model Projet {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   dossiers        DossierSubvention[]
+  notifications   Notification[]
 }
 
 model Dispositif {
@@ -59,6 +60,7 @@ model Dispositif {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   dossiers              DossierSubvention[]
+  notifications         Notification[]
 }
 
 model DossierSubvention {
@@ -67,25 +69,27 @@ model DossierSubvention {
   dispositifId      String
   projet            Projet    @relation(fields: [projetId], references: [id], onDelete: Cascade)
   dispositif        Dispositif @relation(fields: [dispositifId], references: [id], onDelete: Cascade)
-  
+
   statut            String    @default("brouillon")
   // Statuts possibles: brouillon, en_cours, depose, accepte, refuse, abandonne
-  
+
   montantDemande    Float?
   montantAccorde    Float?
   tauxRetenu        Float?
-  
+
   dateCreation      DateTime  @default(now())
   dateDepot         DateTime?
   dateDecision      DateTime?
   echeanceDepot     DateTime?
-  
+
   notes             String?
   documentsJoints   String[]  // URLs des documents
-  
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  
+
+  notifications     Notification[]
+
   @@unique([projetId, dispositifId])
 }
 
@@ -108,6 +112,7 @@ model User {
   updatedAt       DateTime  @updatedAt
 
   pdfTemplates    PdfTemplate[]
+  notifications   Notification[]
 }
 
 model PdfTemplate {
@@ -179,4 +184,47 @@ model PdfTemplate {
   @@index([userId])
   @@index([collectiviteId])
   @@index([isDefault])
+}
+
+model Notification {
+  id              String    @id @default(uuid())
+
+  // Type de notification
+  // echeance_proche, echeance_urgente, echeance_depassee, nouveau_dispositif, statut_dossier
+  type            String
+
+  // Titre et message
+  titre           String
+  message         String?
+
+  // Niveau de priorité
+  // info, warning, urgent, success
+  priorite        String    @default("info")
+
+  // État de lecture
+  isRead          Boolean   @default(false)
+
+  // Références optionnelles
+  dossierId       String?
+  dossier         DossierSubvention? @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+
+  dispositifId    String?
+  dispositif      Dispositif? @relation(fields: [dispositifId], references: [id], onDelete: Cascade)
+
+  projetId        String?
+  projet          Projet? @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  // Utilisateur destinataire (optionnel pour l'instant)
+  userId          String?
+  user            User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Métadonnées
+  createdAt       DateTime  @default(now())
+  readAt          DateTime?
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([priorite])
+  @@index([createdAt])
 }
