@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Settings, Palette, Type, Layout, Eye, Save, RotateCcw,
-  ChevronUp, ChevronDown, GripVertical, FileText, Plus, Copy, Trash2, Upload, ImageIcon, X
+  ChevronUp, ChevronDown, GripVertical, FileText, Plus, Copy, Trash2, Upload, ImageIcon, X, Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -268,6 +268,29 @@ export default function TemplatesPage() {
     }
   }
 
+  // Définir comme défaut
+  const handleSetDefault = async () => {
+    if (selectedTemplateId === 'system-default') {
+      setSaveMessage('Le template système est déjà le défaut par défaut')
+      return
+    }
+    try {
+      const res = await fetch(`/api/pdf-templates/${selectedTemplateId}/set-default`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: null // TODO: Récupérer depuis le contexte d'authentification
+        }),
+      })
+      if (res.ok) {
+        await fetchTemplates()
+        setSaveMessage('✅ Template défini comme défaut')
+      }
+    } catch (e: any) {
+      setSaveMessage(`Erreur: ${e.message}`)
+    }
+  }
+
   // Supprimer
   const handleDelete = async () => {
     if (selectedTemplateId === 'system-default') return
@@ -386,7 +409,10 @@ export default function TemplatesPage() {
                 <SelectContent>
                   {savedTemplates.map((tpl) => (
                     <SelectItem key={tpl.id} value={tpl.id}>
-                      {tpl.nom} {tpl.id === 'system-default' ? '(Systeme)' : ''}
+                      {tpl.isDefault && '⭐ '}
+                      {tpl.nom}
+                      {tpl.id === 'system-default' ? ' (Système)' : ''}
+                      {tpl.isDefault && !tpl.id.includes('system') ? ' (Par défaut)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -397,9 +423,34 @@ export default function TemplatesPage() {
                 <Copy className="h-4 w-4" />
               </Button>
               {selectedTemplateId !== 'system-default' && (
-                <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700" title="Supprimer">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSetDefault}
+                    className={
+                      savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                        ? 'text-yellow-600 border-yellow-600 hover:bg-yellow-50'
+                        : ''
+                    }
+                    title={
+                      savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                        ? 'Template par défaut actuel'
+                        : 'Définir comme défaut'
+                    }
+                  >
+                    <Star
+                      className={`h-4 w-4 ${
+                        savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                          ? 'fill-yellow-600'
+                          : ''
+                      }`}
+                    />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700" title="Supprimer">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
               )}
             </div>
           </div>
