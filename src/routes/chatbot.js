@@ -56,11 +56,17 @@ Quand l'utilisateur demande l'Assistant IA ou la recherche de subventions SANS f
 - Ne demander QUE les informations manquantes qui n'apparaissent nulle part dans l'historique
 - Dès que tu as les 3 informations (description, commune, budget) provenant de N'IMPORTE QUEL message de l'historique, génère IMMÉDIATEMENT le lien [ACTION]
 
+⚠️ NAVIGATION AVEC ACTIONS PRÉ-REMPLIES:
+- Quand toutes les infos (description, commune, budget) sont disponibles, utilise EXCLUSIVEMENT le lien [ACTION] fourni
+- NE JAMAIS dire "rendez-vous sur la page projets" ou mentionner "projets" comme destination
+- TOUJOURS dire "Je peux maintenant lancer l'analyse" ou "Voici le lien pour l'Assistant IA"
+- Le lien [ACTION] fourni est DÉJÀ configuré pour rediriger vers l'Assistant IA avec pré-remplissage
+
 Exemple de dialogue correct:
 Utilisateur: "Je veux des aides pour restaurer le gymnase de ma commune pour 500000€"
 Assistant: "Excellent ! J'ai noté votre projet de restauration du gymnase avec un budget de 500 000€. Pour lancer l'analyse avec l'Assistant IA, il me manque juste le nom de votre commune. Quelle est-elle ?"
 Utilisateur: "Saint Mars la Brière"
-Assistant: "Parfait ! J'ai maintenant toutes les informations : [ACTION:/recherche-subventions|Lancer l'analyse du projet|description=restauration du gymnase&commune=Saint Mars la Brière&budget=500000]"
+Assistant: "Parfait ! J'ai toutes les informations nécessaires. [ACTION:/recherche-subventions|Lancer l'analyse du projet|description=restauration du gymnase&commune=Saint Mars la Brière&budget=500000] pour identifier les meilleures subventions correspondantes."
 
 ⚠️ ERREUR À ÉVITER:
 ❌ Ne JAMAIS redemander une info déjà fournie
@@ -126,7 +132,7 @@ router.post('/message', async (req, res) => {
       if (extractedInfo.budget) extractedSummary += `\n✅ Budget: ${extractedInfo.budget}€`;
 
       if (extractedInfo.description && extractedInfo.commune && extractedInfo.budget) {
-        extractedSummary += '\n\n🎯 TOUTES LES INFOS SONT PRÉSENTES ! Génère IMMÉDIATEMENT le lien [ACTION:/recherche-subventions|Lancer l\'analyse du projet|description=' + encodeURIComponent(extractedInfo.description) + '&commune=' + encodeURIComponent(extractedInfo.commune) + '&budget=' + extractedInfo.budget + '] et confirme à l\'utilisateur.';
+        extractedSummary += '\n\n🎯 TOUTES LES INFOS SONT PRÉSENTES ! Génère IMMÉDIATEMENT ce lien (et AUCUN AUTRE) : [ACTION:/recherche-subventions|Lancer l\'analyse du projet|description=' + encodeURIComponent(extractedInfo.description) + '&commune=' + encodeURIComponent(extractedInfo.commune) + '&budget=' + extractedInfo.budget + ']\n\n⚠️ NE PAS mentionner "projets" ou "page projets" - ce lien redirige DÉJÀ vers l\'Assistant IA avec pré-remplissage.';
       } else {
         extractedSummary += '\n\n❓ Informations manquantes:';
         if (!extractedInfo.description) extractedSummary += '\n- Description du projet';

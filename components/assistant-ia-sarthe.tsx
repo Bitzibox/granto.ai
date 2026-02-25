@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, FileText, ExternalLink, Download, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,29 @@ export function AssistantIASarthe() {
   const [resultats, setResultats] = useState<any>(null)
   const [error, setError] = useState('')
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null)
+
+  // Pré-remplir depuis le chatbot si disponible
+  useEffect(() => {
+    try {
+      const prefillData = localStorage.getItem('chatbot_prefill')
+      if (prefillData) {
+        const data = JSON.parse(prefillData)
+
+        // Vérifier que c'est récent (< 5 minutes)
+        const age = Date.now() - data.timestamp
+        if (age < 5 * 60 * 1000 && data.path === '/recherche-subventions' && data.params) {
+          if (data.params.description) setDescription(data.params.description)
+          if (data.params.commune) setCommune(data.params.commune)
+          if (data.params.budget) setBudget(data.params.budget.toString())
+
+          // Nettoyer après utilisation
+          localStorage.removeItem('chatbot_prefill')
+        }
+      }
+    } catch (err) {
+      console.error('Erreur lecture chatbot_prefill:', err)
+    }
+  }, [])
 
   const handleAnalyse = async () => {
     if (!description.trim() || !commune.trim() || !budget) {
