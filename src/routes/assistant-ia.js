@@ -4,6 +4,7 @@ const { analyzeProject, explainMatch } = require('../services/geminiService');
 const { searchAids } = require('../services/aidesTerritoires');
 const { identifierCommune, estEligibleGeographiquement } = require('../services/geoService');
 const { genererDossierPDF } = require('../services/pdfService');
+const { getTemplateById, getDefaultTemplate, getSystemDefaultTemplate } = require('../services/pdfTemplateService');
 
 // Départements Sarthe et Pays de la Loire
 const SARTHE_DEPTS = ['72', 'sarthe', 'saint-mars', 'le mans', 'mans'];
@@ -196,7 +197,7 @@ router.post('/analyze', async (req, res) => {
  */
 router.post('/generate-pdf', async (req, res) => {
   try {
-    const { aide, commune, analysis, collectivite } = req.body;
+    const { aide, commune, analysis, collectivite, templateId, userId } = req.body;
 
     if (!aide || !commune || !analysis) {
       return res.status(400).json({
@@ -206,7 +207,29 @@ router.post('/generate-pdf', async (req, res) => {
 
     console.log(`📄 Génération PDF pour aide: ${aide.name}`);
 
-    // Générer le PDF
+    // Récupérer le template à utiliser
+    let templateConfig = null;
+    try {
+      if (templateId && templateId !== 'system-default') {
+        // Template spécifique sélectionné
+        console.log(`📋 Utilisation du template: ${templateId}`);
+        templateConfig = await getTemplateById(templateId);
+      } else if (userId) {
+        // Récupérer le template par défaut de l'utilisateur
+        console.log(`📋 Recherche du template par défaut pour l'utilisateur: ${userId}`);
+        templateConfig = await getDefaultTemplate(userId);
+        if (templateConfig) {
+          console.log(`✅ Template par défaut trouvé: ${templateConfig.nom}`);
+        } else {
+          console.log(`⚠️ Pas de template par défaut, utilisation du template système`);
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ Erreur récupération template, utilisation du template système:`, err.message);
+      templateConfig = null;
+    }
+
+    // Générer le PDF avec le template
     const pdfBuffer = await genererDossierPDF({
       projet: {
         description: analysis.description_enrichie,
@@ -216,7 +239,7 @@ router.post('/generate-pdf', async (req, res) => {
       commune,
       collectivite: collectivite || commune.nom,
       analysis
-    });
+    }, templateConfig);
 
     // Nom de fichier sécurisé
     const filename = `Dossier_${aide.slug || 'subvention'}_${Date.now()}.pdf`;

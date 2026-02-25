@@ -50,6 +50,43 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/pdf-templates/default
+ * Récupère le template par défaut de l'utilisateur
+ */
+router.get('/default', async (req, res) => {
+  try {
+    const { userId, collectiviteId } = req.query;
+
+    if (!userId) {
+      // Si pas d'userId, retourner le template système
+      return res.json({
+        id: 'system-default',
+        ...getSystemDefaultTemplate()
+      });
+    }
+
+    try {
+      const defaultTemplate = await getDefaultTemplate(userId, collectiviteId || null);
+
+      if (defaultTemplate) {
+        return res.json(defaultTemplate);
+      }
+    } catch (e) {
+      console.warn('⚠️ Erreur récupération template par défaut:', e.message);
+    }
+
+    // Fallback: template système
+    res.json({
+      id: 'system-default',
+      ...getSystemDefaultTemplate()
+    });
+  } catch (error) {
+    console.error('Erreur récupération template par défaut:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/pdf-templates/:id
  */
 router.get('/:id', async (req, res) => {

@@ -9,6 +9,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
+interface PdfTemplate {
+  id: string
+  nom: string
+  description?: string
+  isDefault?: boolean
+}
+
 export function AssistantIASarthe() {
   const searchParams = useSearchParams()
   const [description, setDescription] = useState('')
@@ -18,6 +25,8 @@ export function AssistantIASarthe() {
   const [resultats, setResultats] = useState<any>(null)
   const [error, setError] = useState('')
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null)
+  const [templates, setTemplates] = useState<PdfTemplate[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('system-default')
 
   // Pré-remplir depuis les URL params (prioritaire) ou localStorage (fallback)
   useEffect(() => {
@@ -55,6 +64,29 @@ export function AssistantIASarthe() {
       console.error('Erreur lecture chatbot_prefill:', err)
     }
   }, [searchParams])
+
+  // Charger les templates disponibles
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        // TODO: Récupérer userId depuis le contexte d'authentification
+        const res = await fetch('/api/pdf-templates')
+        if (res.ok) {
+          const data = await res.json()
+          setTemplates(data)
+
+          // Pré-sélectionner le template par défaut
+          const defaultTemplate = data.find((t: PdfTemplate) => t.isDefault)
+          if (defaultTemplate) {
+            setSelectedTemplateId(defaultTemplate.id)
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement templates:', err)
+      }
+    }
+    loadTemplates()
+  }, [])
 
   const handleAnalyse = async () => {
     if (!description.trim() || !commune.trim() || !budget) {
@@ -105,7 +137,9 @@ export function AssistantIASarthe() {
           aide,
           commune: resultats.commune,
           analysis: resultats.analysis,
-          collectivite: resultats.commune?.nom || commune
+          collectivite: resultats.commune?.nom || commune,
+          templateId: selectedTemplateId,
+          userId: null // TODO: Récupérer depuis le contexte d'authentification
         })
       })
 
@@ -245,6 +279,37 @@ export function AssistantIASarthe() {
                   {resultats.total_found} aides analysées
                 </Badge>
               </div>
+
+              {/* Sélecteur de template PDF */}
+              {templates.length > 0 && (
+                <Card className="bg-gradient-to-r from-purple-500/5 to-pink-500/5 border-purple-200 dark:border-purple-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0">
+                        <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Template PDF pour vos dossiers
+                        </label>
+                        <select
+                          value={selectedTemplateId}
+                          onChange={(e) => setSelectedTemplateId(e.target.value)}
+                          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          {templates.map((template) => (
+                            <option key={template.id} value={template.id}>
+                              {template.nom}
+                              {template.isDefault ? ' (Par défaut)' : ''}
+                              {template.description ? ` - ${template.description}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="space-y-4">
                 {resultats.aides.map((aide: any, index: number) => (
