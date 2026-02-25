@@ -44,7 +44,7 @@ export function AssistantIASarthe() {
       return
     }
 
-    // 2. Sinon fallback sur localStorage
+    // 2. Sinon fallback sur localStorage pour pré-remplissage chatbot
     try {
       const prefillData = localStorage.getItem('chatbot_prefill')
       if (prefillData) {
@@ -63,6 +63,28 @@ export function AssistantIASarthe() {
       }
     } catch (err) {
       console.error('Erreur lecture chatbot_prefill:', err)
+    }
+
+    // 3. Restaurer les résultats précédents s'ils existent (< 30 minutes)
+    try {
+      const savedSearch = localStorage.getItem('assistant_ia_search')
+      const savedResults = localStorage.getItem('assistant_ia_results')
+
+      if (savedSearch && savedResults) {
+        const searchData = JSON.parse(savedSearch)
+        const resultsData = JSON.parse(savedResults)
+
+        // Vérifier que c'est récent (< 30 minutes)
+        const age = Date.now() - resultsData.timestamp
+        if (age < 30 * 60 * 1000) {
+          setDescription(searchData.description || '')
+          setCommune(searchData.commune || '')
+          setBudget(searchData.budget || '')
+          setResultats(resultsData.results)
+        }
+      }
+    } catch (err) {
+      console.error('Erreur restauration résultats Assistant IA:', err)
     }
   }, [searchParams])
 
@@ -117,6 +139,21 @@ export function AssistantIASarthe() {
 
       const data = await res.json()
       setResultats(data)
+
+      // Sauvegarder dans localStorage pour persistance
+      try {
+        localStorage.setItem('assistant_ia_search', JSON.stringify({
+          description: description.trim(),
+          commune: commune.trim(),
+          budget: budget
+        }))
+        localStorage.setItem('assistant_ia_results', JSON.stringify({
+          results: data,
+          timestamp: Date.now()
+        }))
+      } catch (err) {
+        console.error('Erreur sauvegarde résultats:', err)
+      }
     } catch (err: any) {
       console.error('Erreur:', err)
       setError(err.message || 'Une erreur est survenue')

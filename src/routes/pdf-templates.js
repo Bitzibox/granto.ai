@@ -29,10 +29,14 @@ router.get('/', async (req, res) => {
       console.warn('⚠️ Table PdfTemplate pas encore disponible, utilisation du template système');
     }
 
-    // Toujours ajouter le template système en premier s'il n'y a rien
+    // Vérifier s'il y a déjà un template par défaut parmi les templates utilisateur
+    const hasUserDefault = templates.some(t => t.isDefault === true);
+
+    // Toujours ajouter le template système en premier
     const systemTemplate = {
       id: 'system-default',
       ...getSystemDefaultTemplate(),
+      isDefault: !hasUserDefault, // Défaut uniquement si aucun template utilisateur n'est défaut
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -164,6 +168,21 @@ router.post('/:id/set-default', async (req, res) => {
     const { userId } = req.body;
     const template = await setDefaultTemplate(req.params.id, userId);
     res.json(template);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/pdf-templates/:id/unset-default
+ * Retire le statut par défaut d'un template (revient au template système)
+ */
+router.post('/:id/unset-default', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { unsetDefaultTemplate } = require('../services/pdfTemplateService');
+    await unsetDefaultTemplate(req.params.id, userId);
+    res.json({ success: true, message: 'Template par défaut retiré, retour au template système' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

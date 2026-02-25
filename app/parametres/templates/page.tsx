@@ -268,23 +268,38 @@ export default function TemplatesPage() {
     }
   }
 
-  // Définir comme défaut
-  const handleSetDefault = async () => {
-    if (selectedTemplateId === 'system-default') {
-      setSaveMessage('Le template système est déjà le défaut par défaut')
-      return
-    }
+  // Définir/Retirer comme défaut (toggle)
+  const handleToggleDefault = async () => {
+    const currentTemplate = savedTemplates.find(t => t.id === selectedTemplateId)
+    const isCurrentlyDefault = currentTemplate?.isDefault
+
     try {
-      const res = await fetch(`/api/pdf-templates/${selectedTemplateId}/set-default`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: null // TODO: Récupérer depuis le contexte d'authentification
-        }),
-      })
-      if (res.ok) {
-        await fetchTemplates()
-        setSaveMessage('✅ Template défini comme défaut')
+      if (isCurrentlyDefault) {
+        // Retirer le statut de défaut (revient au template système)
+        const res = await fetch(`/api/pdf-templates/${selectedTemplateId}/unset-default`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: null // TODO: Récupérer depuis le contexte d'authentification
+          }),
+        })
+        if (res.ok) {
+          await fetchTemplates()
+          setSaveMessage('✅ Retour au template système par défaut')
+        }
+      } else {
+        // Définir comme défaut
+        const res = await fetch(`/api/pdf-templates/${selectedTemplateId}/set-default`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: null // TODO: Récupérer depuis le contexte d'authentification
+          }),
+        })
+        if (res.ok) {
+          await fetchTemplates()
+          setSaveMessage('✅ Template défini comme défaut')
+        }
       }
     } catch (e: any) {
       setSaveMessage(`Erreur: ${e.message}`)
@@ -422,35 +437,33 @@ export default function TemplatesPage() {
               <Button variant="outline" size="sm" onClick={handleDuplicate} title="Dupliquer">
                 <Copy className="h-4 w-4" />
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleDefault}
+                className={
+                  savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                    ? 'text-yellow-600 border-yellow-600 hover:bg-yellow-50'
+                    : ''
+                }
+                title={
+                  savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                    ? 'Cliquer pour revenir au template système'
+                    : 'Définir comme défaut'
+                }
+              >
+                <Star
+                  className={`h-4 w-4 ${
+                    savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
+                      ? 'fill-yellow-600'
+                      : ''
+                  }`}
+                />
+              </Button>
               {selectedTemplateId !== 'system-default' && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSetDefault}
-                    className={
-                      savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
-                        ? 'text-yellow-600 border-yellow-600 hover:bg-yellow-50'
-                        : ''
-                    }
-                    title={
-                      savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
-                        ? 'Template par défaut actuel'
-                        : 'Définir comme défaut'
-                    }
-                  >
-                    <Star
-                      className={`h-4 w-4 ${
-                        savedTemplates.find(t => t.id === selectedTemplateId)?.isDefault
-                          ? 'fill-yellow-600'
-                          : ''
-                      }`}
-                    />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700" title="Supprimer">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
+                <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700" title="Supprimer">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
             </div>
           </div>

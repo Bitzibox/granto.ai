@@ -195,6 +195,22 @@ async function setDefaultTemplate(id, userId) {
 }
 
 /**
+ * Retire le statut par défaut d'un template (revient au template système)
+ */
+async function unsetDefaultTemplate(id, userId) {
+  // Construire la requête where en fonction du userId
+  const whereCondition = userId ? { userId } : {};
+
+  // Désactiver tous les templates par défaut (de l'utilisateur si userId fourni, sinon tous)
+  await prisma.pdfTemplate.updateMany({
+    where: whereCondition,
+    data: { isDefault: false }
+  });
+
+  console.log(`✅ Template par défaut retiré, retour au template système`);
+}
+
+/**
  * Duplique un template
  */
 async function duplicateTemplate(id, userId) {
@@ -284,6 +300,7 @@ module.exports = {
   updateTemplate,
   deleteTemplate,
   setDefaultTemplate,
+  unsetDefaultTemplate,
   duplicateTemplate,
   incrementUsageCount,
   validateTemplate,
