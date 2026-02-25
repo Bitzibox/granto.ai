@@ -8,7 +8,9 @@ export default function RechercheSubventionsPage() {
   return (
     <div className="space-y-8">
       {/* Assistant IA Sarthe - EN HAUT (priorité visuelle) */}
-      <AssistantIASarthe />
+      <Suspense fallback={<div className="p-6 text-center text-muted-foreground">Chargement de l'Assistant IA...</div>}>
+        <AssistantIASarthe />
+      </Suspense>
 
       {/* Séparateur visuel */}
       <div className="relative py-8">

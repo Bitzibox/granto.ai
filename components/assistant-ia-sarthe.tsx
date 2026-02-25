@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Sparkles, Loader2, FileText, ExternalLink, Download, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
 export function AssistantIASarthe() {
+  const searchParams = useSearchParams()
   const [description, setDescription] = useState('')
   const [commune, setCommune] = useState('')
   const [budget, setBudget] = useState('')
@@ -17,8 +19,22 @@ export function AssistantIASarthe() {
   const [error, setError] = useState('')
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null)
 
-  // Pré-remplir depuis le chatbot si disponible
+  // Pré-remplir depuis les URL params (prioritaire) ou localStorage (fallback)
   useEffect(() => {
+    // 1. D'abord vérifier les URL query params
+    const urlDescription = searchParams.get('description')
+    const urlCommune = searchParams.get('commune')
+    const urlBudget = searchParams.get('budget')
+
+    if (urlDescription || urlCommune || urlBudget) {
+      // Pré-remplir depuis l'URL
+      if (urlDescription) setDescription(urlDescription)
+      if (urlCommune) setCommune(urlCommune)
+      if (urlBudget) setBudget(urlBudget)
+      return
+    }
+
+    // 2. Sinon fallback sur localStorage
     try {
       const prefillData = localStorage.getItem('chatbot_prefill')
       if (prefillData) {
@@ -38,7 +54,7 @@ export function AssistantIASarthe() {
     } catch (err) {
       console.error('Erreur lecture chatbot_prefill:', err)
     }
-  }, [])
+  }, [searchParams])
 
   const handleAnalyse = async () => {
     if (!description.trim() || !commune.trim() || !budget) {

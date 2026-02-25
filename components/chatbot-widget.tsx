@@ -55,13 +55,21 @@ export function ChatbotWidget() {
     if (action.type === 'link') {
       router.push(action.path)
     } else if (action.type === 'action' && action.params) {
-      // Stocker les paramètres dans localStorage pour pré-remplissage
+      // Encoder les paramètres directement dans l'URL comme query params
+      const searchParams = new URLSearchParams()
+      Object.entries(action.params).forEach(([key, value]) => {
+        searchParams.set(key, value)
+      })
+      const urlWithParams = `${action.path}?${searchParams.toString()}`
+
+      // Aussi stocker dans localStorage comme fallback
       localStorage.setItem('chatbot_prefill', JSON.stringify({
         path: action.path,
         params: action.params,
         timestamp: Date.now()
       }))
-      router.push(action.path)
+
+      router.push(urlWithParams)
     }
   }, [router])
 
