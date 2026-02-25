@@ -104,9 +104,9 @@ router.post('/message', async (req, res) => {
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
         generationConfig: {
-          temperature: 0.4,  // Plus déterministe pour extraire infos précises
+          temperature: 0.5,  // Légèrement plus créatif pour réponses complètes
           topP: 0.9,
-          maxOutputTokens: 1500
+          maxOutputTokens: 2048  // Augmenté pour garantir réponses complètes
         }
       });
 
@@ -125,20 +125,19 @@ router.post('/message', async (req, res) => {
       // Construire le prompt avec contexte
       const chatHistory = history.map(h => `${h.role}: ${h.content}`).join('\n');
 
-      // Construire un résumé des infos extraites
-      let extractedSummary = '\n📋 INFORMATIONS EXTRAITES DE LA CONVERSATION:';
-      if (extractedInfo.description) extractedSummary += `\n✅ Projet: ${extractedInfo.description}`;
-      if (extractedInfo.commune) extractedSummary += `\n✅ Commune: ${extractedInfo.commune}`;
-      if (extractedInfo.budget) extractedSummary += `\n✅ Budget: ${extractedInfo.budget}€`;
+      // Construire un résumé concis des infos extraites
+      let extractedSummary = '\n📋 INFOS EXTRAITES:';
+      if (extractedInfo.description) extractedSummary += `\n✅ ${extractedInfo.description}`;
+      if (extractedInfo.commune) extractedSummary += ` | ${extractedInfo.commune}`;
+      if (extractedInfo.budget) extractedSummary += ` | ${extractedInfo.budget}€`;
 
       if (extractedInfo.description && extractedInfo.commune && extractedInfo.budget) {
-        extractedSummary += '\n\n🎯 TOUTES LES INFOS SONT PRÉSENTES ! Génère IMMÉDIATEMENT ce lien (et AUCUN AUTRE) : [ACTION:/recherche-subventions|Lancer l\'analyse du projet|description=' + encodeURIComponent(extractedInfo.description) + '&commune=' + encodeURIComponent(extractedInfo.commune) + '&budget=' + extractedInfo.budget + ']\n\n⚠️ NE PAS mentionner "projets" ou "page projets" - ce lien redirige DÉJÀ vers l\'Assistant IA avec pré-remplissage.';
+        extractedSummary += '\n\n🎯 Génère: [ACTION:/recherche-subventions|Lancer l\'analyse|description=' + encodeURIComponent(extractedInfo.description) + '&commune=' + encodeURIComponent(extractedInfo.commune) + '&budget=' + extractedInfo.budget + ']';
       } else {
-        extractedSummary += '\n\n❓ Informations manquantes:';
-        if (!extractedInfo.description) extractedSummary += '\n- Description du projet';
-        if (!extractedInfo.commune) extractedSummary += '\n- Commune';
-        if (!extractedInfo.budget) extractedSummary += '\n- Budget';
-        extractedSummary += '\n\nDemande UNIQUEMENT les informations manquantes ci-dessus.';
+        extractedSummary += '\n❓ Manque:';
+        if (!extractedInfo.description) extractedSummary += ' description';
+        if (!extractedInfo.commune) extractedSummary += ' commune';
+        if (!extractedInfo.budget) extractedSummary += ' budget';
       }
 
       const prompt = `${SYSTEM_CONTEXT}
