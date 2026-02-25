@@ -4,11 +4,24 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
+ * Vérifie si le modèle Notification est disponible
+ */
+function isNotificationModelAvailable() {
+  return prisma.notification !== undefined;
+}
+
+/**
  * GET /api/notifications
  * Récupère les notifications de l'utilisateur
  */
 router.get('/', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      console.warn('⚠️ Table Notification pas encore disponible. Exécutez: npx prisma migrate dev --name add-notification-model');
+      return res.json([]);
+    }
+
     const { userId, onlyUnread } = req.query;
 
     const where = {};
@@ -46,6 +59,11 @@ router.get('/', async (req, res) => {
  */
 router.get('/count', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      return res.json({ count: 0 });
+    }
+
     const { userId } = req.query;
 
     const where = { isRead: false };
@@ -66,6 +84,12 @@ router.get('/count', async (req, res) => {
  */
 router.post('/generate', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      console.warn('⚠️ Table Notification pas encore disponible. Exécutez: npx prisma migrate dev --name add-notification-model');
+      return res.json({ success: false, count: 0, notifications: [], message: 'Table Notification pas encore créée' });
+    }
+
     const notificationsCreated = [];
 
     // 1. Récupérer tous les dossiers avec échéances
@@ -191,6 +215,11 @@ router.post('/generate', async (req, res) => {
  */
 router.put('/:id/read', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      return res.status(503).json({ error: 'Service non disponible - Migration Prisma requise' });
+    }
+
     const { id } = req.params;
 
     const notification = await prisma.notification.update({
@@ -214,6 +243,11 @@ router.put('/:id/read', async (req, res) => {
  */
 router.put('/read-all', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      return res.json({ success: true, count: 0 });
+    }
+
     const { userId } = req.body;
 
     const where = { isRead: false };
@@ -240,6 +274,11 @@ router.put('/read-all', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
+    // Vérifier si la migration a été exécutée
+    if (!isNotificationModelAvailable()) {
+      return res.status(204).send();
+    }
+
     const { id } = req.params;
 
     await prisma.notification.delete({
