@@ -50,6 +50,21 @@ export function ChatbotWidget() {
   const router = useRouter()
   const { theme } = useTheme()
 
+  // Handler pour les clics sur les actions
+  const handleActionClick = useCallback((action: Action) => {
+    if (action.type === 'link') {
+      router.push(action.path)
+    } else if (action.type === 'action' && action.params) {
+      // Stocker les paramètres dans localStorage pour pré-remplissage
+      localStorage.setItem('chatbot_prefill', JSON.stringify({
+        path: action.path,
+        params: action.params,
+        timestamp: Date.now()
+      }))
+      router.push(action.path)
+    }
+  }, [router])
+
   // Charger les suggestions contextuelles
   useEffect(() => {
     const page = pathname === '/' ? 'dashboard' : pathname.split('/')[1] || 'default'
@@ -187,20 +202,6 @@ export function ChatbotWidget() {
     }
     setPulseButton(false)
   }
-
-  const handleActionClick = useCallback((action: Action) => {
-    if (action.type === 'link') {
-      router.push(action.path)
-    } else if (action.type === 'action' && action.params) {
-      // Stocker les paramètres dans localStorage pour pré-remplissage
-      localStorage.setItem('chatbot_prefill', JSON.stringify({
-        path: action.path,
-        params: action.params,
-        timestamp: Date.now()
-      }))
-      router.push(action.path)
-    }
-  }, [router])
 
   // Formatter le texte avec du markdown basique et rendre les actions cliquables
   const formatMessage = (text: string, actions?: Action[]) => {
