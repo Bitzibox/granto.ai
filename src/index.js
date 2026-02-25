@@ -59,8 +59,12 @@ const assistantIARouter = require('./routes/assistant-ia');
 app.use('/api/assistant-ia', assistantIARouter);
 
 // Routes Templates PDF
-// const pdfTemplatesRouter = require('./routes/pdf-templates');
-// app.use('/api/pdf-templates', pdfTemplatesRouter);
+const pdfTemplatesRouter = require('./routes/pdf-templates');
+app.use('/api/pdf-templates', pdfTemplatesRouter);
+
+// Routes Notifications
+const notificationsRouter = require('./routes/notifications');
+app.use('/api/notifications', notificationsRouter);
 
 // Routes Upload (logos, etc.)
 const uploadRouter = require('./routes/upload');

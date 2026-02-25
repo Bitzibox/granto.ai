@@ -23,7 +23,7 @@ const navigation = [
   { name: 'Mes dossiers', href: '/dossiers', icon: FileText },
   { name: 'Calendrier', href: '/calendrier', icon: Calendar },
   { name: 'Collectivités', href: '/collectivites', icon: Building2 },
-  { name: 'Paramètres', href: '/parametres/templates', icon: Settings },
+  { name: 'Paramètres', href: '/parametres', icon: Settings },
 ]
 
 export function GrantoLayout({ children }: { children: React.ReactNode }) {
