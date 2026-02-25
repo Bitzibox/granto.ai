@@ -40,12 +40,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes principales (temporairement désactivées - problème Prisma)
-// TODO: Réactiver après résolution du problème Prisma
-// app.use('/api/collectivites', require('./routes/collectivites'));
-// app.use('/api/projets', require('./routes/projets'));
-// app.use('/api/dispositifs', require('./routes/dispositifs'));
-// app.use('/api/dossiers', require('./routes/dossiers'));
+// Routes principales
+app.use('/api/collectivites', require('./routes/collectivites'));
+app.use('/api/projets', require('./routes/projets'));
+app.use('/api/dispositifs', require('./routes/dispositifs'));
+app.use('/api/dossiers', require('./routes/dossiers'));
 
 // Import du service Aides-Territoires
 const aidesTerritoires = require('./services/aidesTerritoires');
