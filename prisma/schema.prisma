@@ -89,6 +89,7 @@ model DossierSubvention {
   updatedAt         DateTime  @updatedAt
 
   notifications     Notification[]
+  generatedPdfs     GeneratedPdf[]
 
   @@unique([projetId, dispositifId])
 }
@@ -226,5 +227,29 @@ model Notification {
   @@index([isRead])
   @@index([type])
   @@index([priorite])
+  @@index([createdAt])
+}
+
+// PDF générés pour les dossiers de subvention
+model GeneratedPdf {
+  id              String    @id @default(uuid())
+  
+  // Relation au dossier
+  dossierId       String
+  dossier         DossierSubvention @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  
+  // Informations du fichier
+  fileName        String    // Nom du fichier (ex: "dossier-renovation-cimetiere-1709123456.pdf")
+  filePath        String    // Chemin relatif (ex: "/pdfs/dossier-renovation-cimetiere-1709123456.pdf")
+  fileSize        Int       // Taille en octets
+  
+  // Métadonnées
+  templateUsed    Json?     // Template utilisé pour générer le PDF
+  generatedData   Json?     // Données utilisées pour la génération
+  
+  // Dates
+  createdAt       DateTime  @default(now())
+  
+  @@index([dossierId])
   @@index([createdAt])
 }

@@ -4,6 +4,8 @@
 
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs').promises;
 const { genererDossierPDF } = require('../services/pdfService');
 const { getDefaultTemplate } = require('../services/pdfTemplateService');
 
@@ -105,9 +107,29 @@ router.post('/demande-subvention', async (req, res) => {
     // Générer le PDF
     const pdfBuffer = await genererDossierPDF(pdfData, templateConfig);
 
+    // Sauvegarder le PDF dans public/pdfs
+    const timestamp = Date.now();
+    const fileName = `dossier-${dossierDb.projet.titre.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${timestamp}.pdf`;
+    const filePath = `/pdfs/${fileName}`;
+    const absolutePath = path.join(__dirname, '../../public', filePath);
+
+    await fs.writeFile(absolutePath, pdfBuffer);
+
+    // Créer l'enregistrement en base
+    await prisma.generatedPdf.create({
+      data: {
+        dossierId,
+        fileName,
+        filePath,
+        fileSize: pdfBuffer.length,
+        templateUsed: templateConfig || null,
+        generatedData: pdfData
+      }
+    });
+
     // Retourner le PDF directement
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="dossier-${dossierDb.projet.titre.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
 
