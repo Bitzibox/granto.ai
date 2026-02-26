@@ -295,6 +295,12 @@ export default function DossierDetailPage() {
                     value={montantDemande}
                     onChange={(e) => setMontantDemande(e.target.value)}
                   />
+                  {dossier?.projet?.montantHt && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      💡 Budget du projet: {parseFloat(dossier.projet.montantHt).toLocaleString()}€ HT
+                      {dossier?.projet?.montantTtc && ` (${parseFloat(dossier.projet.montantTtc).toLocaleString()}€ TTC)`}
+                    </p>
+                  )}
                 </div>
 
                 <div>

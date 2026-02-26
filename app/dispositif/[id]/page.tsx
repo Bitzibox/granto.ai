@@ -6,7 +6,7 @@ import { ArrowLeft, Calendar, Euro, MapPin, Building2, FileText, CheckCircle2 } 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { dispositifsAPI, projetsAPI } from '@/lib/api'
+import { dispositifsAPI, projetsAPI, dossiersAPI } from '@/lib/api'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ export default function DispositifDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showSelectDialog, setShowSelectDialog] = useState(false)
   const [projets, setProjets] = useState<any[]>([])
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -48,12 +49,27 @@ export default function DispositifDetailPage() {
     setShowSelectDialog(true)
   }
 
-  const handleSelectProject = (projetId: string) => {
-    // TODO: Créer un dossier de subvention
-    console.log('Créer un dossier pour le projet', projetId, 'avec le dispositif', dispositif.id)
-    setShowSelectDialog(false)
-    // Rediriger vers le projet
-    router.push(`/projet/${projetId}`)
+  const handleSelectProject = async (projetId: string) => {
+    try {
+      setCreating(true)
+
+      // Créer le dossier de subvention
+      // Le montantDemande sera automatiquement pré-rempli avec le montantHt du projet
+      const dossier = await dossiersAPI.create({
+        projetId,
+        dispositifId: dispositif.id,
+        notes: `Dossier créé automatiquement depuis le dispositif ${dispositif.nom}`
+      })
+
+      setShowSelectDialog(false)
+
+      // Rediriger vers le dossier créé
+      router.push(`/dossier/${dossier.id}`)
+    } catch (error: any) {
+      console.error('Erreur création dossier:', error)
+      alert(error.message || 'Erreur lors de la création du dossier')
+      setCreating(false)
+    }
   }
 
   if (loading) {
@@ -286,7 +302,12 @@ export default function DispositifDetailPage() {
           </DialogHeader>
 
           <div className="mt-4 space-y-3 max-h-96 overflow-y-auto">
-            {projets.length === 0 ? (
+            {creating ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-slate-600">Création du dossier en cours...</p>
+              </div>
+            ) : projets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-slate-500 mb-4">Aucun projet disponible.</p>
                 <Button onClick={() => router.push('/')}>
@@ -298,7 +319,7 @@ export default function DispositifDetailPage() {
                 <Card
                   key={projet.id}
                   className="cursor-pointer hover:bg-slate-50 hover:border-blue-300 transition-colors"
-                  onClick={() => handleSelectProject(projet.id)}
+                  onClick={() => !creating && handleSelectProject(projet.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">

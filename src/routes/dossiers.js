@@ -86,12 +86,21 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Un dossier existe déjà pour ce projet et ce dispositif' });
     }
     
+    // Pré-remplir automatiquement avec les données du projet si non fournies
+    const montantInitial = montantDemande
+      ? parseFloat(montantDemande)
+      : (projet.montantHt ? parseFloat(projet.montantHt) : null);
+
+    const echeanceInitiale = echeanceDepot
+      ? new Date(echeanceDepot)
+      : dispositif.dateCloture;
+
     const dossier = await prisma.dossierSubvention.create({
       data: {
         projetId,
         dispositifId,
-        montantDemande: montantDemande ? parseFloat(montantDemande) : null,
-        echeanceDepot: echeanceDepot ? new Date(echeanceDepot) : dispositif.dateCloture,
+        montantDemande: montantInitial,
+        echeanceDepot: echeanceInitiale,
         notes,
         statut: 'brouillon'
       },
