@@ -31,23 +31,31 @@ export default function CalendrierPage() {
 
   const loadData = async () => {
     try {
+      console.log('📅 Calendrier: Chargement des dossiers...')
       // Charger les dossiers avec échéances
       const dossiersData = await dossiersAPI.getAll()
+      console.log('✅ Dossiers chargés:', dossiersData.length, 'dossiers')
       setDossiers(dossiersData)
 
       // Charger les dispositifs avec dates de clôture
+      console.log('📅 Calendrier: Chargement des dispositifs...')
       const dispositifsRes = await fetch('/api/dispositifs')
       if (dispositifsRes.ok) {
         const dispositifsData = await dispositifsRes.json()
+        console.log('✅ Dispositifs chargés:', dispositifsData.length, 'dispositifs')
         setDispositifs(dispositifsData)
+      } else {
+        console.error('❌ Erreur chargement dispositifs:', dispositifsRes.status)
       }
 
       // Construire la liste des échéances
       const toutesEcheances: Echeance[] = []
 
       // Ajouter les échéances de dépôt des dossiers
+      console.log('📅 Traitement des échéances de dossiers...')
       dossiersData.forEach((dossier: any) => {
         if (dossier.echeanceDepot) {
+          console.log(`  ✓ Dossier: ${dossier.projet?.titre} - Échéance: ${dossier.echeanceDepot}`)
           toutesEcheances.push({
             id: `dossier-${dossier.id}`,
             type: 'dossier',
@@ -59,18 +67,25 @@ export default function CalendrierPage() {
             dispositifNom: dossier.dispositif?.nom,
             statut: dossier.statut
           })
+        } else {
+          console.log(`  ⊘ Dossier sans échéance: ${dossier.projet?.titre}`)
         }
       })
+      console.log(`📊 Total échéances dossiers: ${toutesEcheances.length}`)
 
       // Charger aussi les dispositifs ouverts (pour information)
+      console.log('📅 Traitement des dispositifs ouverts...')
       const dispositifsRes2 = await fetch('/api/dispositifs')
       if (dispositifsRes2.ok) {
         const dispoData = await dispositifsRes2.json()
+        const now = new Date()
+        let dispositifsCount = 0
         dispoData.forEach((dispositif: any) => {
           if (dispositif.dateCloture) {
             const dateCloture = new Date(dispositif.dateCloture)
             // N'afficher que les dispositifs dont la date de clôture n'est pas encore passée
-            if (dateCloture > new Date()) {
+            if (dateCloture > now) {
+              console.log(`  ✓ Dispositif: ${dispositif.nom.substring(0, 50)}... - Clôture: ${dispositif.dateCloture}`)
               toutesEcheances.push({
                 id: `dispositif-${dispositif.id}`,
                 type: 'dispositif',
@@ -79,13 +94,16 @@ export default function CalendrierPage() {
                 date: dateCloture,
                 dispositifNom: dispositif.organisme
               })
+              dispositifsCount++
             }
           }
         })
+        console.log(`📊 Total échéances dispositifs (futurs): ${dispositifsCount}`)
       }
 
       // Trier par date
       toutesEcheances.sort((a, b) => a.date.getTime() - b.date.getTime())
+      console.log(`✅ Total final échéances: ${toutesEcheances.length}`)
       setEcheances(toutesEcheances)
     } catch (error) {
       console.error('Erreur:', error)
