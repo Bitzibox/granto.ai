@@ -157,7 +157,30 @@ Réponds au format JSON:
     throw new Error('Format de réponse invalide');
   }
 
-  return JSON.parse(jsonMatch[0]);
+  // Nettoyer le JSON avant parsing pour éviter les erreurs de caractères de contrôle
+  let jsonText = jsonMatch[0];
+
+  // Remplacer les retours à la ligne littéraux par des espaces dans les valeurs de strings
+  // mais garder la structure JSON intacte
+  try {
+    // Utiliser une expression régulière pour remplacer les \n littéraux uniquement dans les valeurs
+    jsonText = jsonText.replace(/: "([^"]*)"/g, (match, value) => {
+      // Échapper les retours à la ligne et autres caractères spéciaux
+      const cleaned = value
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, '')
+        .replace(/\t/g, ' ')
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
+      return `: "${cleaned}"`;
+    });
+
+    return JSON.parse(jsonText);
+  } catch (parseError) {
+    console.error('Erreur parsing JSON Gemini:', parseError.message);
+    console.error('JSON brut:', jsonText.substring(0, 500));
+    throw new Error(`Erreur parsing JSON: ${parseError.message}`);
+  }
 }
 
 module.exports = {

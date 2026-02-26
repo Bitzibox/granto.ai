@@ -58,7 +58,7 @@ router.post('/demande-subvention', async (req, res) => {
       return res.status(404).json({ error: 'Dossier non trouvé' });
     }
 
-    // Formater les données pour genererDossierPDF
+    // Formater les données pour genererDossierPDF avec toutes les informations nécessaires
     const pdfData = {
       projet: {
         description: dossierDb.projet.description || dossierDb.projet.titre,
@@ -68,19 +68,29 @@ router.post('/demande-subvention', async (req, res) => {
         name: dossierDb.dispositif.nom,
         slug: dossierDb.dispositif.id,
         financers: [dossierDb.dispositif.organisme || 'Non spécifié'],
-        subvention_rate_lower_bound: null,
-        subvention_rate_upper_bound: null,
-        description: dossierDb.dispositif.description
+        subvention_rate_lower_bound: dossierDb.dispositif.tauxMin || null,
+        subvention_rate_upper_bound: dossierDb.dispositif.tauxMax || null,
+        description: dossierDb.dispositif.description || dossierDb.dispositif.nom
       },
       commune: {
         nom: dossierDb.projet.collectivite.nom,
+        departement: dossierDb.projet.collectivite.codePostal?.substring(0, 2) || '72',
+        region: 'Pays de la Loire',
         codePostal: dossierDb.projet.collectivite.codePostal || '',
-        ville: dossierDb.projet.collectivite.ville || '',
+        ville: dossierDb.projet.collectivite.ville || dossierDb.projet.collectivite.nom,
       },
       collectivite: dossierDb.projet.collectivite.nom,
       analysis: {
-        description_enrichie: dossierDb.projet.description || '',
+        categorie_principale: dossierDb.projet.typeProjet || 'equipement',
+        mots_cles: [
+          dossierDb.projet.typeProjet || 'projet',
+          'collectivité',
+          'infrastructure'
+        ],
         montant_estime: dossierDb.montantDemande || dossierDb.projet.montantHt || 0,
+        description_enrichie: dossierDb.projet.description || dossierDb.projet.titre || 'Projet de la collectivité',
+        eligibilite_detr: true,
+        eligibilite_dsil: true
       }
     };
 
