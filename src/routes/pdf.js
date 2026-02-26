@@ -111,7 +111,12 @@ router.post('/demande-subvention', async (req, res) => {
     const timestamp = Date.now();
     const fileName = `dossier-${dossierDb.projet.titre.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${timestamp}.pdf`;
     const filePath = `/pdfs/${fileName}`;
-    const absolutePath = path.join(__dirname, '../../public', filePath);
+    const publicDir = path.join(__dirname, '../../public');
+    const pdfsDir = path.join(publicDir, 'pdfs');
+    const absolutePath = path.join(pdfsDir, fileName);
+
+    // Créer le dossier public/pdfs s'il n'existe pas
+    await fs.mkdir(pdfsDir, { recursive: true });
 
     await fs.writeFile(absolutePath, pdfBuffer);
 

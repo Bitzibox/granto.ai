@@ -157,28 +157,24 @@ Réponds au format JSON:
     throw new Error('Format de réponse invalide');
   }
 
-  // Nettoyer le JSON avant parsing pour éviter les erreurs de caractères de contrôle
+  // Nettoyer TOUS les caractères de contrôle avant parsing
   let jsonText = jsonMatch[0];
 
-  // Remplacer les retours à la ligne littéraux par des espaces dans les valeurs de strings
-  // mais garder la structure JSON intacte
   try {
-    // Utiliser une expression régulière pour remplacer les \n littéraux uniquement dans les valeurs
-    jsonText = jsonText.replace(/: "([^"]*)"/g, (match, value) => {
-      // Échapper les retours à la ligne et autres caractères spéciaux
-      const cleaned = value
-        .replace(/\n/g, ' ')
-        .replace(/\r/g, '')
-        .replace(/\t/g, ' ')
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"');
-      return `: "${cleaned}"`;
-    });
+    // Supprimer tous les caractères de contrôle ASCII (0-31) sauf espaces, tabs, newlines autorisés
+    // Les remplacer par des espaces
+    jsonText = jsonText.replace(/[\x00-\x09\x0B-\x1F\x7F]/g, ' ');
+
+    // Normaliser les multiples espaces
+    jsonText = jsonText.replace(/\s+/g, ' ');
 
     return JSON.parse(jsonText);
   } catch (parseError) {
-    console.error('Erreur parsing JSON Gemini:', parseError.message);
-    console.error('JSON brut:', jsonText.substring(0, 500));
+    console.error('❌ Erreur parsing JSON Gemini:', parseError.message);
+    // Afficher le contexte autour de l'erreur
+    const pos = parseInt(parseError.message.match(/\d+/)?.[0] || 0);
+    console.error('📍 Position:', pos);
+    console.error('📄 Contexte:', jsonText.substring(Math.max(0, pos - 100), Math.min(jsonText.length, pos + 100)));
     throw new Error(`Erreur parsing JSON: ${parseError.message}`);
   }
 }
