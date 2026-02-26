@@ -4,9 +4,8 @@
 
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const { getPdfGenerator } = require('../services/PdfGenerator');
+const { genererDossierPDF } = require('../services/pdfService');
+const { getDefaultTemplate } = require('../services/pdfTemplateService');
 
 // Prisma optionnel - peut ne pas être disponible
 let prisma = null;
@@ -23,69 +22,85 @@ try {
  *
  * Body:
  * - dossierId: ID du dossier de subvention
- * - ou données complètes (collectivite, projet, dispositif, dossier)
  */
 router.post('/demande-subvention', async (req, res) => {
   try {
-    const { dossierId, collectivite, projet, dispositif, dossier } = req.body;
+    const { dossierId } = req.body;
 
-    let pdfData;
-
-    if (dossierId && prisma) {
-      // Récupérer les données depuis la base
-      const dossierDb = await prisma.dossierSubvention.findUnique({
-        where: { id: dossierId },
-        include: {
-          projet: {
-            include: {
-              collectivite: true,
-            },
-          },
-          dispositif: true,
-        },
-      });
-
-      if (!dossierDb) {
-        return res.status(404).json({ error: 'Dossier non trouvé' });
-      }
-
-      pdfData = {
-        collectivite: dossierDb.projet.collectivite,
-        projet: dossierDb.projet,
-        dispositif: dossierDb.dispositif,
-        dossier: dossierDb,
-      };
-    } else if (collectivite && projet) {
-      // Utiliser les données fournies
-      pdfData = { collectivite, projet, dispositif, dossier };
-    } else {
+    if (!dossierId) {
       return res.status(400).json({
         error: 'Données insuffisantes',
-        message: 'Fournir dossierId ou les données complètes (collectivite, projet)',
+        message: 'Fournir dossierId',
       });
     }
 
-    const pdfGenerator = getPdfGenerator();
-    const result = await pdfGenerator.generateDemandeSubvention(pdfData);
+    if (!prisma) {
+      return res.status(500).json({
+        error: 'Base de données non disponible',
+        message: 'Prisma client non initialisé'
+      });
+    }
 
-    // Enregistrer en base si dossierId fourni
-    if (dossierId) {
-      await prisma.generatedPdf.create({
-        data: {
-          dossierId,
-          fileName: result.fileName,
-          filePath: result.filePath,
-          fileSize: result.fileSize,
-          generatedData: pdfData,
+    // Récupérer les données depuis la base
+    const dossierDb = await prisma.dossierSubvention.findUnique({
+      where: { id: dossierId },
+      include: {
+        projet: {
+          include: {
+            collectivite: true,
+          },
         },
-      });
+        dispositif: true,
+      },
+    });
+
+    if (!dossierDb) {
+      return res.status(404).json({ error: 'Dossier non trouvé' });
     }
 
-    res.json({
-      success: true,
-      ...result,
-      downloadUrl: `/api/pdf/download/${result.fileName}`,
-    });
+    // Formater les données pour genererDossierPDF
+    const pdfData = {
+      projet: {
+        description: dossierDb.projet.description || dossierDb.projet.titre,
+        budget: dossierDb.montantDemande || dossierDb.projet.montantHt || 0
+      },
+      aide: {
+        name: dossierDb.dispositif.nom,
+        slug: dossierDb.dispositif.id,
+        financers: [dossierDb.dispositif.organisme || 'Non spécifié'],
+        subvention_rate_lower_bound: null,
+        subvention_rate_upper_bound: null,
+        description: dossierDb.dispositif.description
+      },
+      commune: {
+        nom: dossierDb.projet.collectivite.nom,
+        codePostal: dossierDb.projet.collectivite.codePostal || '',
+        ville: dossierDb.projet.collectivite.ville || '',
+      },
+      collectivite: dossierDb.projet.collectivite.nom,
+      analysis: {
+        description_enrichie: dossierDb.projet.description || '',
+        montant_estime: dossierDb.montantDemande || dossierDb.projet.montantHt || 0,
+      }
+    };
+
+    // Récupérer le template par défaut (ou utiliser le template système)
+    let templateConfig = null;
+    try {
+      templateConfig = await getDefaultTemplate(null, null);
+    } catch (e) {
+      console.warn('Utilisation du template système par défaut');
+    }
+
+    // Générer le PDF
+    const pdfBuffer = await genererDossierPDF(pdfData, templateConfig);
+
+    // Retourner le PDF directement
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="dossier-${dossierDb.projet.titre.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+
   } catch (error) {
     console.error('Error generating demande subvention PDF:', error);
     res.status(500).json({

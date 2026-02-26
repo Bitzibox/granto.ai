@@ -62,9 +62,8 @@ const pdfTemplatesRouter = require('./routes/pdf-templates');
 app.use('/api/pdf-templates', pdfTemplatesRouter);
 
 // Routes PDF (génération de documents)
-// TEMPORAIREMENT DÉSACTIVÉ - Module PdfGenerator manquant
-// const pdfRouter = require('./routes/pdf');
-// app.use('/api/pdf', pdfRouter);
+const pdfRouter = require('./routes/pdf');
+app.use('/api/pdf', pdfRouter);
 
 // Routes Notifications
 const notificationsRouter = require('./routes/notifications');
