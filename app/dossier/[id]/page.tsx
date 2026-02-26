@@ -62,6 +62,7 @@ export default function DossierDetailPage() {
   const [dossier, setDossier] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -133,6 +134,45 @@ export default function DossierDetailPage() {
     }
   }
 
+  const handleGeneratePdf = async () => {
+    try {
+      setGeneratingPdf(true)
+      setError(null)
+
+      const response = await fetch('/api/pdf/demande-subvention', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dossierId })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de la génération du PDF')
+      }
+
+      // Le PDF est retourné en blob
+      const blob = await response.blob()
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `dossier-${dossier?.projet?.titre?.replace(/[^a-z0-9]/gi, '-').toLowerCase() || 'subvention'}-${Date.now()}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      setSuccessMessage('PDF généré et téléchargé avec succès')
+      setTimeout(() => setSuccessMessage(null), 5000)
+    } catch (err) {
+      console.error('Erreur génération PDF:', err)
+      setError(err instanceof Error ? err.message : 'Erreur lors de la génération du PDF')
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
+
   const getStatutInfo = (statutValue: string) => {
     return statutOptions.find(s => s.value === statutValue) || statutOptions[0]
   }
@@ -192,9 +232,30 @@ export default function DossierDetailPage() {
               {dossier?.dispositif?.nom || 'Dispositif non spécifié'}
             </p>
           </div>
-          <Badge className={getStatutInfo(statut).color}>
-            {getStatutInfo(statut).label}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGeneratePdf}
+              disabled={generatingPdf}
+              className="gap-2"
+            >
+              {generatingPdf ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Génération...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Générer PDF
+                </>
+              )}
+            </Button>
+            <Badge className={getStatutInfo(statut).color}>
+              {getStatutInfo(statut).label}
+            </Badge>
+          </div>
         </div>
       </div>
 
